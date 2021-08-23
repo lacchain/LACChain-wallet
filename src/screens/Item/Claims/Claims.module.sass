@@ -1,0 +1,30 @@
+@import ../../../styles/helpers
+
+.item
+    display: flex
+    align-items: center
+    padding-bottom: 16px
+    border-bottom: 1px solid $neutrals6
+    +dark
+        border-color: $neutrals3
+    &:not(:last-child)
+        margin-bottom: 16px
+
+.reward
+    position: absolute
+    right: -5px
+    bottom: -5px
+    img
+        max-width: 25px
+    
+.details
+    flex-grow: 1
+
+.position
+    color: $neutrals4
+
+.name
+    font-weight: 500
+
+.value
+    text-overflow: ellipsis

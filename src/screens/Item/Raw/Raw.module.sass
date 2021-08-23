@@ -1,0 +1,13 @@
+@import ../../../styles/helpers
+
+.item
+    display: flex
+    align-items: center
+    padding-bottom: 16px
+    border-bottom: 1px solid $neutrals6
+    +dark
+        border-color: $neutrals3
+    &:not(:last-child)
+        margin-bottom: 16px
+.code
+    overflow: auto
