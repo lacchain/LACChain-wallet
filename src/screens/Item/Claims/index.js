@@ -8,7 +8,7 @@ const Claims = ( { className, claims } ) => {
 		<div className={cn( styles.users, className )}>
 			<div className={styles.list}>
 				{claimNames.map( ( name, index ) => (
-					typeof claims[name] === 'object' ? <Claims className={className} claims={claims[name]}/> :
+					typeof claims[name] === 'object' ? <Claims key={index} className={className} claims={claims[name]}/> :
 					<div className={styles.item} key={index}>
 						<div className={styles.details}>
 							<div className={styles.name}>{name}</div>

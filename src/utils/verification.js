@@ -18,10 +18,14 @@ export function sha256( data ) {
 }
 
 export const verifyCredential = async vc => {
-	const proof = vc.proof.find( p => p.id === vc.issuer );
-	if( !proof ) return {};
-
-	const contract = new ethers.Contract( proof.domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	if( !vc.proof[0].domain ) return {
+		credentialExists: false,
+		isNotRevoked: false,
+		issuerSignatureValid: false,
+		additionalSigners: false,
+		isNotExpired: false
+	}
+	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 
 	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 	const rsv = ethUtil.fromRpcSig( vc.proof[0].proofValue );
@@ -43,10 +47,7 @@ export const verifyCredential = async vc => {
 }
 
 export const verifySignature = async( vc, signature ) => {
-	const proof = vc.proof.find( p => p.id === vc.issuer );
-	if( !proof ) return null;
-
-	const contract = new ethers.Contract( proof.domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 
 	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 
@@ -60,6 +61,7 @@ export const verifySignature = async( vc, signature ) => {
 }
 
 export const getRootOfTrust = async vc => {
+	if( !vc.trustedList ) return [];
 	let tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 
 	const rootOfTrust = [{
@@ -67,7 +69,7 @@ export const getRootOfTrust = async vc => {
 		name: await tlContract.name()
 	}];
 	let parent = await tlContract.parent();
-	for( const index of [1, 2, 3, 4, 5] ) {
+	for( const index of [1, 2, 3, 4, 5, 6] ) {
 		const contract = new ethers.Contract( parent, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 		try {
 			rootOfTrust.push( {
@@ -88,6 +90,7 @@ export const getRootOfTrust = async vc => {
 }
 
 export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
+	if( rootOfTrust.length <= 0 ) return [];
 	const validation = ( new Array( rootOfTrust.length ) ).fill( false );
 	const root = new ethers.Contract( rootOfTrust[0].address, RootOfTrust.pkd, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 	if( ( await root.publicKeys( rootOfTrust[1].address ) ).status <= 0 ) return validation;
@@ -97,7 +100,7 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 	for( const tl of rootOfTrust.slice( 1 ) ) {
 		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 		if( index + 1 >= rootOfTrust.length ) {
-			validation[index] = ( await tlContract.entities( issuer.replace( 'did:lac:main:', '' ) ) ).status > 0;
+			validation[index] = ( await tlContract.entities( issuer.replace( 'did:lac:main:', '' ) ) ).status === 1;
 			return validation;
 		}
 		if( ( await tlContract.entities( rootOfTrust[index + 1].address ) ).status <= 0 ) return validation;
@@ -132,10 +135,10 @@ export const fromCborQR = async cborQR => {
 	const cborldArrayBuffer = base32Decode( result.data, 'RFC4648' );
 	const cborldBytes = new Uint8Array( cborldArrayBuffer );
 
-	function buf2hex(buffer) { // buffer is an ArrayBuffer
-		return [...new Uint8Array(buffer)]
-			.map(x => x.toString(16).padStart(2, '0'))
-			.join(' ');
+	function buf2hex( buffer ) { // buffer is an ArrayBuffer
+		return [...new Uint8Array( buffer )]
+			.map( x => x.toString( 16 ).padStart( 2, '0' ) )
+			.join( ' ' );
 	}
 
 	return {
@@ -143,7 +146,7 @@ export const fromCborQR = async cborQR => {
 			cborldBytes,
 			documentLoader
 		} ),
-		cbor: buf2hex(cborldArrayBuffer)
+		cbor: buf2hex( cborldArrayBuffer )
 	}
 };
 
@@ -155,7 +158,7 @@ export const toEUCertificate = vc => {
 		"ver": "1.3.0",
 		"nam": {
 			"fn": fn,
-			"fnt": fn.replace( ' ', '<' ).replace('ó', 'o').toUpperCase(),
+			"fnt": fn.replace( ' ', '<' ).replace( 'ó', 'o' ).toUpperCase(),
 			"gn": gn,
 			"gnt": gn.replace( ' ', '<' ).toUpperCase()
 		},

@@ -1,56 +1,65 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./Search01.module.sass";
-import { getTrackBackground, Range } from "react-range";
 import Icon from "../../components/Icon";
 import Card from "../../components/Card";
 import Dropdown from "../../components/Dropdown";
+import { useAuthContext } from '../../contexts/authContext'
+import Modal from "../../components/Modal";
+import RemoveSale from "../../components/RemoveSale";
 
 // data
-import { credentials } from "../../mocks/credentials";
+// import Token from "../../components/Card/token";
 
 const navLinks = [{
 	label: "All",
 	context: '*'
 }, {
 	label: "Health",
-	context: 'http://id.lacchain.net/credentials/health/vaccination/v1'
+	context: 'https://credentials-library.lacchain.net/credentials/health/vaccination/v1'
 }, {
 	label: "Education",
-	context: 'http://id.lacchain.net/credentials/education/lacchain-academy/v1'
+	context: 'https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1'
 }, {
 	label: "Identity",
-	context: 'http://id.lacchain.net/credentials/identity/v1'
+	context: 'https://credentials-library.lacchain.net/credentials/identity/v1'
 }, {
 	label: "Other",
-	context: 'https://id.lacchain.net/credentials/other/v1'
+	context: 'https://credentials-library.lacchain.net/credentials/other/v1'
 }];
 
 const dateOptions = ["Newest", "Oldest"];
-//const likesOptions = ["Most liked", "Least liked"];
-//const colorOptions = ["All colors", "Black", "Green", "Pink", "Purple"];
-//const creatorOptions = ["Verified only", "All", "Most liked"];
 
 const Search = () => {
-	const [results, setResults] = useState( credentials );
+	const { user, update, updated } = useAuthContext();
+
+	const localCredentials = user.credentials || '[]';
+
+	const [results, setResults] = useState( localCredentials );
+	const [filtered, setFiltered] = useState( results );
 	const [activeIndex, setActiveIndex] = useState( 0 );
+	const [selectedItem, setSelectedItem] = useState( -1 );
 	const [date, setDate] = useState( dateOptions[0] );
-	//const [likes, setLikes] = useState( likesOptions[0] );
-	//const [color, setColor] = useState( colorOptions[0] );
-	//const [creator, setCreator] = useState( creatorOptions[0] );
 	const [visible, setVisible] = useState( false );
+	const [visibleModalRemove, setVisibleModalRemove] = useState( false );
 
 	const [search, setSearch] = useState( "" );
 
-	//const [values, setValues] = useState( [5] );
+	useEffect( () => {
+		setResults( user.credentials );
+		setFiltered( user.credentials );
+	}, [updated] );
 
-	const handleSubmit = ( e ) => {
-		alert();
+
+	const handleRemove = async () => {
+		const credentials = user.credentials.filter( c => c.id !== selectedItem );
+		await update( { ...user, credentials } );
+		setVisibleModalRemove( false );
 	};
 
-	const STEP = 0.1;
-	const MIN = 0.01;
-	const MAX = 10;
+	const handleSubmit = e => {
+		alert();
+	};
 
 	return (
 		<div className={cn( "", styles.section )}>
@@ -64,8 +73,8 @@ const Search = () => {
                                 } )}
                                 onClick={() => {
                                 	setActiveIndex( index );
-									setResults( credentials.filter( c => {
-										const context = c['@context'].slice(-1)[0];
+									setFiltered( results.filter( c => {
+										const context = c['@context']?.slice(-1)[0];
 										return context === x.context || x.context === '*';
 									} ) );
 								}}
@@ -75,7 +84,7 @@ const Search = () => {
                             </button>
                         ) )}
                     </div>
-                    <button
+					{/* <button
                         className={cn( styles.filter, { [styles.active]: visible } )}
                         onClick={() => setVisible( !visible )}
                     >
@@ -84,7 +93,7 @@ const Search = () => {
                             <Icon name="filter" size="18"/>
                             <Icon name="close" size="10"/>
                         </div>
-                    </button>
+                    </button> */ }
 				</div>
 				<div className={styles.row}>
 					<div className={cn(styles.filters, { [styles.active]: visible })}>
@@ -119,125 +128,22 @@ const Search = () => {
                                 />
                             </div>
                         </div>
-						{/*
-						<div className={styles.range}>
-							<div className={styles.label}>Price range</div>
-							<Range
-								values={values}
-								step={STEP}
-								min={MIN}
-								max={MAX}
-								onChange={( values ) => setValues( values )}
-								renderTrack={( { props, children } ) => (
-									<div
-										onMouseDown={props.onMouseDown}
-										onTouchStart={props.onTouchStart}
-										style={{
-											...props.style,
-											height: "36px",
-											display: "flex",
-											width: "100%",
-										}}
-									>
-										<div
-											ref={props.ref}
-											style={{
-												height: "8px",
-												width: "100%",
-												borderRadius: "4px",
-												background: getTrackBackground( {
-													values,
-													colors: ["#3772FF", "#E6E8EC"],
-													min: MIN,
-													max: MAX,
-												} ),
-												alignSelf: "center",
-											}}
-										>
-											{children}
-										</div>
-									</div>
-								)}
-								renderThumb={( { props, isDragged } ) => (
-									<div
-										{...props}
-										style={{
-											...props.style,
-											height: "24px",
-											width: "24px",
-											borderRadius: "50%",
-											backgroundColor: "#3772FF",
-											border: "4px solid #FCFCFD",
-											display: "flex",
-											justifyContent: "center",
-											alignItems: "center",
-										}}
-									>
-										<div
-											style={{
-												position: "absolute",
-												top: "-33px",
-												color: "#fff",
-												fontWeight: "600",
-												fontSize: "14px",
-												lineHeight: "18px",
-												fontFamily: "Poppins",
-												padding: "4px 8px",
-												borderRadius: "8px",
-												backgroundColor: "#141416",
-											}}
-										>
-											{values[0].toFixed( 1 )}
-										</div>
-									</div>
-								)}
-							/>
-							<div className={styles.scale}>
-								<div className={styles.number}>0.01 ETH</div>
-								<div className={styles.number}>10 ETH</div>
-							</div>
-						</div>
-						<div className={styles.group}>
-							<div className={styles.item}>
-								<div className={styles.label}>Price</div>
-								<Dropdown
-									className={styles.dropdown}
-									value={likes}
-									setValue={setLikes}
-									options={likesOptions}
-								/>
-							</div>
-							<div className={styles.item}>
-								<div className={styles.label}>Color</div>
-								<Dropdown
-									className={styles.dropdown}
-									value={color}
-									setValue={setColor}
-									options={colorOptions}
-								/>
-							</div>
-							<div className={styles.item}>
-								<div className={styles.label}>Creator</div>
-								<Dropdown
-									className={styles.dropdown}
-									value={creator}
-									setValue={setCreator}
-									options={creatorOptions}
-								/>
-							</div>
-						</div>
-						<div className={styles.reset}>
-							<Icon name="close-circle-fill" size="24"/>
-							<span>Reset filter</span>
-						</div>
-						*/}
 					</div>
 					<div className={styles.wrapper}>
 						<div className={styles.list}>
-							{results.map( ( x, index ) => (
-								<Card className={styles.card} item={x} key={index}/>
+							{filtered.filter( x => x.id ).map( ( x, index ) => (
+								<Card className={styles.card} item={x} key={index} onRemove={() => {
+									setVisibleModalRemove( true );
+									setSelectedItem( x.id );
+								}} />
 							) )}
 						</div>
+						<Modal
+							visible={visibleModalRemove}
+							onClose={() => setVisibleModalRemove( false )}
+						>
+							<RemoveSale onAccept={ () => handleRemove() }/>
+						</Modal>
 					</div>
 				</div>
 			</div>

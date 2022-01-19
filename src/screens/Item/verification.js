@@ -9,9 +9,8 @@ import {
 	verifyRootOfTrust,
 	verifySignature
 } from "../../utils/verification";
-import Checkout from "./Control/Checkout";
+import CredentialVerfication from "./Control/CredentialVerfication";
 import Modal from "../../components/Modal";
-import Icon from "../../components/Icon";
 import { credentials } from "../../mocks/credentials";
 
 async function verifyFullCredential( credential ) {
@@ -58,7 +57,7 @@ const Item = ( { match } ) => {
 						visible={visibleModalVerification}
 						onClose={() => setVisibleModalVerification( false )}
 					>
-						<Checkout results={verification || {}} loading={verifying}/>
+						<CredentialVerfication results={verification || {}} loading={verifying}/>
 					</Modal>
 				</div>
 				<h5>CBOR</h5><br/>

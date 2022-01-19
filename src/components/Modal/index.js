@@ -7,6 +7,7 @@ import styles from "./Modal.module.sass";
 import Icon from "../Icon";
 
 const Modal = ({
+    closable = true,
   outerClassName,
   containerClassName,
   visible,
@@ -42,9 +43,11 @@ const Modal = ({
           <OutsideClickHandler onOutsideClick={onClose}>
             <div className={cn(styles.container, containerClassName)}>
               {children}
+              {closable &&
               <button className={styles.close} onClick={onClose}>
-                <Icon name="close" size="14" />
+                <Icon name="close" size="14"/>
               </button>
+              }
             </div>
           </OutsideClickHandler>
         </div>

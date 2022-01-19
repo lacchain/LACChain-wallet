@@ -30,6 +30,23 @@
         width: 100%
         margin: 0
 
+.error
+    display: flex
+    align-items: center
+    margin-top: 30px
+    padding: 14px
+    border-radius: 8px
+    background: rgba($pink, .08)
+    color: $pink
+    +m
+        align-items: stretch
+    .preview
+        flex-shrink: 0
+        width: 32px
+        margin-right: 16px
+        svg
+            fill: $pink
+
 .input
     width: 100%
     height: 48px
@@ -133,6 +150,25 @@
     +t
         padding-left: 0
 
+.sync
+    position: relative
+    display: flex
+    margin-left: auto
+    justify-content: center
+    align-items: center
+    padding: 0 15px 0 15px
+    flex-shrink: 0
+    border-radius: 24px
+    background: $blue
+    +dm-sans
+    font-size: 16px
+    line-height: 48px
+    color: $neutrals8
+    transition: background .2s, box-shadow .2s
+    -webkit-tap-highlight-color: rgba(0,0,0,0)
+    +m
+        width: 100%
+
 .filter
     position: relative
     display: flex
@@ -233,7 +269,8 @@
 .list
     display: flex
     flex-wrap: wrap
-    margin: -32px -16px 0
+    margin: -62px -16px 0
+    padding-bottom: 30px
     +m
         display: block
         margin: 0
@@ -242,7 +279,7 @@
     flex: 0 0 calc(33.333% - 32px)
     max-width: calc(33.333% - 32px)
     margin: 32px 16px 0
-    padding: 12px 0
+    padding: 0
     box-shadow: 0px 32px 32px rgba(31, 47, 70, 0.12)
     border-radius: 20px
     +r(1279)
@@ -259,3 +296,41 @@
 .btns
     margin-top: 32px
     text-align: center
+
+.line
+    display: flex
+    align-items: center
+    .text
+        color: $neutrals4
+
+.icon
+    position: relative
+    display: flex
+    justify-content: center
+    align-items: center
+    flex-shrink: 0
+    width: 40px
+    height: 40px
+    margin-right: 20px
+    background: $neutrals6
+    border: 2px solid $neutrals6
+    border-radius: 50%
+    transition: all .2s
+    svg
+        fill: $neutrals4
+        transition: fill .2s
+    .loader
+        position: absolute
+        top: -3px
+        left: -3px
+        right: -3px
+        bottom: -3px
+        background: $neutrals8
+        +dark
+            background: $neutrals1
+
+.details
+    flex-grow: 1
+
+.subtitle
+    +body-bold-2

@@ -1,0 +1,192 @@
+@import ../../styles/helpers
+
+.title
+    margin-bottom: 15px
+    padding-top: 10px
+    text-align: center
+    font-size: 20px
+    font-weight: 500
+    font-family: 'Helvetica Neue', serif
+
+.info
+    margin: 0 auto 15px
+    text-align: center
+    font-size: 16px
+    font-family: 'Helvetica Neue', serif
+    font-weight: 300
+    span
+        text-decoration: underline
+    
+.table
+    margin-bottom: 10px
+    padding: 24px
+    border-radius: 12px
+    border: 1px solid $neutrals6
+    +dark
+        border-color: $neutrals3
+
+.row
+    display: flex
+    &:not(:last-child)
+        margin-bottom: 10px
+
+.col
+    font-size: 13px
+    &:first-child
+        color: $neutrals4
+        margin-right: auto
+        font-weight: 500
+        padding-right: 16px
+    &:nth-child(2)
+        flex-shrink: 0
+        width: 230px
+
+.stage
+    margin-bottom: 16px
+    text-align: center
+    +body-bold-2
+
+.socials
+    display: flex
+    justify-content: center
+
+.social
+    display: flex
+    justify-content: center
+    align-items: center
+    flex-shrink: 0
+    width: 48px
+    height: 48px
+    border: 2px solid $neutrals6
+    border-radius: 50%
+    transition: border-color .2s
+    +dark
+        border-color: $neutrals3
+    svg
+        fill: $neutrals4
+        transition: fill .2s
+    &:hover
+        border-color: $blue
+        svg
+            fill: $blue
+    &:not(:last-child)
+        margin-right: 16px
+
+.btns
+    margin-top: 32px
+
+.button
+    font-size: 14px
+    width: 100%
+    &:not(:last-child)
+        margin-bottom: 8px
+
+.failed_mark
+    width: 80px
+    height: 80px
+    margin: 0 auto
+    border: .25em solid #f27474
+    border-radius: 50%
+    //transform: scale(0.6)
+    -webkit-animation: swal2-animate-error-icon .5s
+    animation: swal2-animate-error-icon .5s
+
+    .failed_icon
+        position: relative
+        flex-grow: 1
+        -webkit-animation: swal2-animate-error-x-mark .5s
+        animation: swal2-animate-error-x-mark .5s
+
+        .icon_line
+            display: block
+            position: absolute
+            height: .3125em
+            border-radius: .125em
+            background-color: #f27474
+            top: 2.4em
+            left: 0.55em
+            width: 4em
+
+        .left
+            // left: .0625em
+            -webkit-transform: rotate(45deg)
+            transform: rotate(45deg)
+
+        .right
+            // right: .3125em
+            -webkit-transform: rotate(-45deg)
+            transform: rotate(-45deg)
+
+@-webkit-keyframes swal2-animate-error-x-mark
+    0%
+        margin-top: 1.625em
+        -webkit-transform: scale(.4)
+        transform: scale(.4)
+        opacity: 0
+
+    50%
+        margin-top: 1.625em
+        -webkit-transform: scale(.4)
+        transform: scale(.4)
+        opacity: 0
+
+    80%
+        margin-top: -.375em
+        -webkit-transform: scale(.7)
+        transform: scale(.7)
+
+    100%
+        margin-top: 0
+        -webkit-transform: scale(1)
+        transform: scale(1)
+        opacity: 1
+
+
+@keyframes swal2-animate-error-x-mark
+    0%
+        margin-top: 1.625em
+        -webkit-transform: scale(.4)
+        transform: scale(.4)
+        opacity: 0
+
+    50%
+        margin-top: 1.625em
+        -webkit-transform: scale(.4)
+        transform: scale(.4)
+        opacity: 0
+
+    80%
+        margin-top: -.375em
+        -webkit-transform: scale(.7)
+        transform: scale(.7)
+
+    100%
+        margin-top: 0
+        -webkit-transform: scale(1)
+        transform: scale(1)
+        opacity: 1
+
+
+@-webkit-keyframes swal2-animate-error-icon
+    0%
+        -webkit-transform: rotateX(100deg)
+        transform: rotateX(100deg)
+        opacity: 0
+
+    100%
+        -webkit-transform: rotateX(0)
+        transform: rotateX(0)
+        opacity: 1
+
+
+@keyframes swal2-animate-error-icon
+    0%
+        -webkit-transform: rotateX(100deg)
+        transform: rotateX(100deg)
+        opacity: 0
+
+    100%
+        -webkit-transform: rotateX(0)
+        transform: rotateX(0)
+        opacity: 1
+

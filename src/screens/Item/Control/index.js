@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./Control.module.sass";
-import Checkout from "./Checkout";
+import CredentialVerfication from "./CredentialVerfication";
 import Connect from "../../../components/Connect";
 import Bid from "../../../components/Bid";
 import Accept from "./Accept";
@@ -77,7 +77,7 @@ const Control = ({ className }) => {
         visible={visibleModalPurchase}
         onClose={() => setVisibleModalPurchase(false)}
       >
-        <Checkout />
+        <CredentialVerfication />
         <SuccessfullyPurchased />
       </Modal>
       <Modal

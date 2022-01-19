@@ -1,10 +1,19 @@
 export const credentials = [
+	// Tokens
+	{
+		"type": "ERC20",
+		"ticker": "LAC",
+		"name": "LACChain Token",
+		"address": "0xF8e160be646D2429C64D46Fba8e8588b8483DBaF",
+		"maxSupply": 100000000,
+		"decimals": 8
+	}, // Regular
 	// Health
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/health/vaccination/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/health/vaccination/v1"
 		],
 		"id": "12cf1390-4bc5-4438-bf62-229d5ca493d8",
 		"type": [
@@ -54,8 +63,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/health/vaccination/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/health/vaccination/v1"
 		],
 		"id": "22cf1390-4bc5-4438-bf62-229d5ca493d9",
 		"type": [
@@ -105,8 +114,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/health/vaccination/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/health/vaccination/v1"
 		],
 		"id": "72cf1390-4bc5-4438-bf62-229d5ca493d0",
 		"type": [
@@ -156,8 +165,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/health/vaccination/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/health/vaccination/v1"
 		],
 		"id": "2819bdbf-631b-488e-81e6-a01212b5c48e",
 		"type": [
@@ -207,8 +216,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/health/vaccination/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/health/vaccination/v1"
 		],
 		"id": "4fd046a6-8102-42f7-aa57-54dd78cbfe0e",
 		"type": [
@@ -259,8 +268,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "92dd20e5-3199-45b4-af2e-c45fb7fc990a",
 		"type": [
@@ -323,8 +332,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "12dd20e5-3199-45b4-af2e-c45fb7fc990b",
 		"type": [
@@ -387,8 +396,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "22dd20e5-3199-45b4-af2e-c45fb7fc990c",
 		"type": [
@@ -451,8 +460,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "b88cdccc-dc44-4a37-8566-1de07b7971f9",
 		"type": [
@@ -515,8 +524,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "87fde2e8-daf8-4ac6-8a12-b2fb52fd0ddc",
 		"type": [
@@ -571,8 +580,8 @@ export const credentials = [
 	{
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
-			"http://id.lacchain.net/credentials/security/trusted/v1",
-			"http://id.lacchain.net/credentials/education/lacchain-academy/v1"
+			"https://credentials-library.lacchain.net/credentials/security/trusted/v1",
+			"https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1"
 		],
 		"id": "25cf82f6-c0eb-431b-8ed8-4224e35b42e1",
 		"type": [

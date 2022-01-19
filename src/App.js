@@ -1,143 +1,94 @@
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./styles/app.sass";
+import "./styles/global.sass";
 import Page from "./components/Page";
-import Home from "./screens/Home";
-import UploadVariants from "./screens/UploadVariants";
-import UploadDetails from "./screens/UploadDetails";
-import ConnectWallet from "./screens/ConnectWallet";
-import Faq from "./screens/Faq";
-import Activity from "./screens/Activity";
 import Search01 from "./screens/Search01";
-import Search02 from "./screens/Search02";
 import Profile from "./screens/Profile";
-import ProfileEdit from "./screens/ProfileEdit";
 import Item from "./screens/Item";
 import Verification from "./screens/Item/verification";
-import PageList from "./screens/PageList";
+import Register from "./screens/Register";
+import Login from "./screens/Login";
+import Token from "./screens/Item/token";
+import { PrivateRoute } from "./utils/PrivateRoute";
+import LoaderCircle from "./components/LoaderCircle";
+import { useAuthContext } from "./contexts/authContext";
 
 function App() {
-  return (
-    <Router>
-      <Switch>
-        <Route
-          exact
-          path="/"
-          render={() => (
-            <Page>
-              <Search01 />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/upload-variants"
-          render={() => (
-            <Page>
-              <UploadVariants />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/upload-details"
-          render={() => (
-            <Page>
-              <UploadDetails />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/connect-wallet"
-          render={() => (
-            <Page>
-              <ConnectWallet />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/faq"
-          render={() => (
-            <Page>
-              <Faq />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/activity"
-          render={() => (
-            <Page>
-              <Activity />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/search01"
-          render={() => (
-            <Page>
-              <Search01 />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/search02"
-          render={() => (
-            <Page>
-              <Search02 />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/profile"
-          render={() => (
-            <Page>
-              <Profile />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/verification"
-          render={() => (
-            <Page>
-              <Verification />
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/profile-edit"
-          render={() => (
-            <Page>
-              <ProfileEdit />
-            </Page>
-          )}
-        />
-        <Route
-          path="/item/:id"
-          render={(props) => (
-            <Page>
-              <Item {...props}/>
-            </Page>
-          )}
-        />
-        <Route
-          exact
-          path="/pagelist"
-          render={() => (
-            <Page>
-              <PageList />
-            </Page>
-          )}
-        />
-      </Switch>
-    </Router>
-  );
+    const { authorizing } = useAuthContext();
+	if( authorizing ) {
+		return (
+            <div className="icons">
+                <LoaderCircle className="loader" />
+                <div className="label">Waiting for Metamask</div>
+            </div>
+        )
+	}
+    return (
+        <Router>
+            <Switch>
+                <PrivateRoute
+                    exact
+                    path="/"
+                    render={props => (
+                        <Page>
+                            <Search01 {...props} />
+                        </Page>
+                    )}/>
+                <PrivateRoute
+                    exact
+                    path="/profile"
+                    render={() => (
+                        <Page>
+                            <Profile/>
+                        </Page>
+                    )}
+                />
+                <Route
+                    exact
+                    path="/verification"
+                    render={() => (
+                        <Page>
+                            <Verification/>
+                        </Page>
+                    )}
+                />
+                <Route
+                    exact
+                    path="/register"
+                    render={props => (
+                        <Page>
+                            <Register {...props} />
+                        </Page>
+                    )}
+                />
+                <Route
+                    exact
+                    path="/login"
+                    render={() => (
+                        <Page>
+                            <Login/>
+                        </Page>
+                    )}
+                />
+                <PrivateRoute
+                    path="/item/:id"
+                    render={( props ) => (
+                        <Page>
+                            <Item {...props}/>
+                        </Page>
+                    )}
+                />
+                <PrivateRoute
+                    path="/token/:id"
+                    render={( props ) => (
+                        <Page>
+                            <Token {...props}/>
+                        </Page>
+                    )}
+                />
+            </Switch>
+        </Router>
+    );
 }
 
 export default App;

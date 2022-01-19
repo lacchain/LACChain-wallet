@@ -2,17 +2,16 @@ import React from "react";
 import cn from "classnames";
 import styles from "./RemoveSale.module.sass";
 
-const RemoveSale = ({ className }) => {
+const RemoveSale = ({ className, onAccept }) => {
   return (
     <div className={cn(className, styles.transfer)}>
-      <div className={cn("h4", styles.title)}>Remove from sale</div>
+      <div className={cn("h4", styles.title)}>Remove item</div>
       <div className={styles.text}>
-        Do you really want to remove your item from sale? You can put it on sale
-        anytime
+        Do you really want to remove your item from wallet? You can add the token
+        anytime or synchronize the credentials with the mailbox
       </div>
       <div className={styles.btns}>
-        <button className={cn("button", styles.button)}>Remove now</button>
-        <button className={cn("button-stroke", styles.button)}>Cancel</button>
+        <button className={cn("button-pink", styles.button)} onClick={onAccept}>Remove now</button>
       </div>
     </div>
   );

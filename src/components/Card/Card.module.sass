@@ -5,8 +5,9 @@
     flex-direction: column
     &:hover
         .control
-            visibility: visible
-            opacity: 1
+            background: $neutrals3l
+        .close
+            display: block
 
 .preview
     position: relative
@@ -14,20 +15,19 @@
     overflow: hidden
     & > img
         width: 100%
-    
+
 .control
     position: absolute
     top: 0
     left: 0
     width: 100%
     height: 100%
-    background: $neutrals3
-    visibility: hidden
     border-radius: 16px
-    opacity: 0
     transition: all .2s
+    color: #FFFFFF
+    font-family: 'Helvetica Neue', serif
     +dark
-        background: $neutrals3
+        background: $neutrals3d
 
 .category
     position: absolute
@@ -84,7 +84,7 @@
     display: flex
     flex-direction: column
     flex-grow: 1
-    padding: 20px 0
+    padding: 0
     color: $neutrals2
     +dark
         color: $neutrals8
@@ -93,7 +93,7 @@
     display: flex
     flex-direction: column
     flex-grow: 1
-    padding: 0 12px
+    padding: 0 px
 
 .line
     display: flex
@@ -103,26 +103,45 @@
     &:nth-child(2)
         margin-top: auto
 
+.remove
+    position: absolute
+    right: 0
+    z-index: 10000
+    text-align: center
+    width: 30px
+    height: 30px
+    display: none
+
+.topLeft
+    margin: 28px 0 0 15px
+    font-size: 11px
+    line-height: (24/16)
+    font-weight: 400
+
+.topRight
+    margin: -17px 15px 0 0
+    font-size: 11px
+    line-height: (24/16)
+    text-align: right
+    font-weight: 400
+
 .title
-    margin-right: auto
-    padding-top: 1px
-    +body-bold-2
+    margin: 68px 0 0 80px
+    font-size: 15px
+    line-height: (24/16)
+    font-weight: 500
 
-.description
-    display: block
-    clear: both
-
-.price
-    flex-shrink: 0
-    margin-left: 8px
-    padding: 0 8px
-    border-radius: 4px
-    box-shadow: inset 0 0 0 2px $green
+.claim
+    margin: 0 0 0 80px
     font-size: 12px
-    line-height: 26px
-    font-weight: 700
-    text-transform: uppercase
-    color: $green
+    line-height: (24/16)
+    font-weight: 300
+
+.bottom
+    margin: 0 0 0 80px
+    font-size: 12px
+    line-height: (24/16)
+    font-weight: 200
 
 .unknown
     flex-shrink: 0
@@ -181,3 +200,28 @@
         color: $neutrals3
         +dark
             color: $neutrals8
+
+
+.close
+    position: absolute
+    top: 5px
+    right: 5px
+    width: 40px
+    height: 40px
+    display: none
+    background: $neutrals8
+    border: 2px solid $neutrals6
+    border-radius: 50%
+    font-size: 0
+    svg
+        margin: 11px 11px
+        fill: $neutrals2
+        transition: transform .2s
+    +dark
+        border-color: $neutrals3
+        background: $neutrals1
+        svg
+            fill: $neutrals8
+    &:hover
+        svg
+            transform: rotate(90deg)

@@ -1,0 +1,152 @@
+@import ../../../styles/helpers
+
+.form
+    margin-left: 15px
+
+.title
+    margin-right: auto
+
+.list
+    margin-bottom: 40px
+    padding-bottom: 40px
+    +m
+        margin-bottom: 32px
+        padding-bottom: 32px
+
+.item
+    border-bottom: 1px solid $neutrals6
+    +dark
+        border-color: $neutrals3
+    &:not(:last-child)
+        padding-bottom: 20px
+        margin-bottom: 20px
+        +m
+            padding-bottom: 12px
+            margin-bottom: 12px
+
+    .button
+        width: 200px
+        display: block
+        margin: 24px auto
+        +m
+            width: 100%
+
+.note
+    margin-top: 4px
+    +caption-2
+    color: $neutrals4
+
+.file
+    position: relative
+    display: flex
+    flex-direction: column
+    justify-content: center
+    align-items: center
+    height: 182px
+    margin-top: 16px
+    border-radius: 16px
+    overflow: hidden
+    background: $neutrals7
+    +dark
+        background: $neutrals2
+
+.dragging
+    border: 1px dashed #aaa
+    background: $neutrals6
+
+.load
+    position: absolute
+    top: 0
+    left: 0
+    font-size: 400px
+    opacity: 0
+    
+.icon
+    margin-bottom: 10px
+    svg
+        fill: $neutrals4
+    
+.format
+    +caption-2
+    color: $neutrals4
+
+.preview
+    height: 300px
+    word-break: break-all
+    padding: 20px
+    width: 100%
+    overflow: auto
+    +caption-2
+    color: $neutrals4
+
+.category
+    +body-bold-2
+
+.fieldset
+    margin-top: 32px
+    .field
+        &:not(:last-child)
+            margin-bottom: 32px
+            +m
+                margin-bottom: 20px
+
+.label
+    margin-bottom: 12px
+    +hairline-2
+    color: $neutrals5
+    
+.row
+    display: flex
+    margin: 0 -10px
+    +m
+        display: block
+        margin: 0
+
+.col
+    flex: 0 0 calc(33.333% - 20px)
+    width: calc(33.333% - 20px)
+    margin: 0 10px
+    +m
+        width: 100%
+        margin: 0
+        &:not(:last-child)
+            margin-bottom: 20px
+
+.options
+    margin-bottom: 40px
+    +m
+        margin-bottom: 32px
+
+.option
+    display: flex
+    align-items: flex-start
+    &:not(:last-child)
+        margin-bottom: 32px
+
+.box
+    flex-grow: 1
+
+.switch
+    flex-shrink: 0
+    margin-left: 24px
+
+.text
+    margin-top: 4px
+    +caption-2
+    color: $neutrals4
+    
+.foot
+    display: flex
+    align-items: center
+    +m
+        display: block
+        text-align: center
+
+.saving
+    display: inline-flex
+    align-items: center
+    margin-left: auto
+    +button-1
+
+.loader
+    margin: 0 auto

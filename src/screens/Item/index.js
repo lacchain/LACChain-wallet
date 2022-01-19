@@ -4,21 +4,21 @@ import styles from "./Item.module.sass";
 import Proofs from "./Proofs";
 import Claims from "./Claims";
 import Options from "./Options";
-import { credentials } from "../../mocks/credentials";
 import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
-	getRootOfTrust, toEUCertificate,
+	getRootOfTrust,
+	toEUCertificate,
 	verifyCredential,
 	verifyRootOfTrust,
 	verifySignature
 } from "../../utils/verification";
-import Checkout from "./Control/Checkout";
-import Modal from "../../components/Modal";
-import moment from "moment";
-import Icon from "../../components/Icon";
 import RootOfTrust from "./RootOfTrust";
+import { useAuthContext } from "../../contexts/authContext";
+import { getBalance as getERC20Balance } from "../../utils/erc20";
+import { getBalance as getNFTBalance } from "../../utils/erc721";
+import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
 
 const navLinks = ["Claims", "Proofs", "Root of Trust", "Raw", "EU"];
 
@@ -37,110 +37,173 @@ async function verifyFullCredential( credential ) {
 }
 
 const Item = ( { match } ) => {
-	const [visibleModalVerification, setVisibleModalVerification] = useState( false );
+	const { user } = useAuthContext();
+
 	const [activeIndex, setActiveIndex] = useState( 0 );
 	const [verifying, setIsVerifying] = useState( true );
-	const [verification, setVerification] = useState( {} );
+	const [balance, setBalance] = useState( 0 );
 	const [rootOfTrust, setRootOfTrust] = useState( [] );
-	const credential = credentials.find( c => c.id === match.params.id );
+	const credential = user.credentials.find( c => c.id === match.params.id );
 	const context = credential['@context'];
-	const type = ( !context.length ? types[context] : types[context[context.length - 1]] ) || types['https://www.w3.org/2018/credentials/v1'];
-	const issuer = issuers[credential.issuer] || issuers.unknown;
+	const type = ( !Array.isArray( context ) ? types[context] : types[context[context.length - 1]] ) || types['https://www.w3.org/2018/credentials/v1'];
 	const [proofs, setProofs] = useState( [] );
 
 	useEffect( () => {
-		verifyFullCredential( credential ).then( async result => {
-			setProofs( result.proofs );
-			const rootOfTrust = await getRootOfTrust( credential );
-			const validation = await verifyRootOfTrust( rootOfTrust, credential.issuer );
-			setVerification( {...result.verification, isTrusted: validation[validation.length - 1]} );
-			setRootOfTrust( rootOfTrust.map( (rot, i) => ({ ...rot, valid: validation[i] }) ) );
-			setIsVerifying( false );
-		} );
+		if( type.kind === 'vc' ) {
+			verifyFullCredential( credential ).then( async result => {
+				setProofs( result.proofs );
+				const rootOfTrust = await getRootOfTrust( credential );
+				const validation = await verifyRootOfTrust( rootOfTrust, credential.issuer );
+				setRootOfTrust( rootOfTrust.map( ( rot, i ) => ( { ...rot, valid: validation[i] } ) ) );
+				setIsVerifying( false );
+			} );
+		} else {
+			switch( type.title ){
+				case 'ERC-20 Token':
+					getERC20Balance( credential.address, user.did.replace('did:lac:main:', '') )
+						.then( balance => {
+							const amount = balance.toNumber() / 10**credential.decimals;
+							setBalance( amount );
+						} );
+					break;
+				case 'NFT Token':
+					getNFTBalance( credential.address, user.did.replace('did:lac:main:', '') )
+						.then( balance => {
+							const amount = balance.toNumber() / 10**credential.decimals;
+							setBalance( isNaN( amount ) ? 0 : amount );
+						} );
+				case 'Tokenized Money':
+					getTokenizedBalance( credential.address ).then( balance => setBalance( balance ) );
+			}
+		}
 	}, [] );
 
 	return (
 		<>
 			<div>
 				<div className={cn( "container", styles.container )}>
-					<div className={styles.bg}>
-						<div className={styles.preview}>
-							<img
-								src={type.image}
-								alt="Item"
-							/>
+					<div className={styles.card_wrapper}>
+						<div className={styles.card}>
+							<div className={styles.preview}>
+								<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
+								<div className={styles.control}>
+									<div className={styles.topLeft}>{type.topLeft( credential )}</div>
+									<div className={styles.topRight}>{type.topRight( { ...credential, balance } )}</div>
+									<div className={styles.title}>{type.title}</div>
+									<div className={styles.claim}>{type.claim( credential )}</div>
+									<div className={styles.bottom}>{type.bottom( credential )}</div>
+								</div>
+							</div>
 						</div>
-						<Options className={styles.options} credential={credential}/>
-						<button className={cn( "button-small", true )} style={{ width: '100%' }}
-								onClick={() => {
-									setVisibleModalVerification( true );
-								}}>
-							<span>Verify Credential</span>
-							<Icon name="check" size="16"/>
-						</button>
+						<Options className={styles.options} item={credential} type={type}/>
 					</div>
 					<div className={styles.details}>
-						<h1 className={cn( "h5", styles.title )}>{type.title}</h1>
+						<h1 className={cn( "h5", styles.title2 )}>{type.title}</h1>
 						<div className={styles.cost}>
 							<div className={styles.categories}>
-								<div className={cn(
-									{ "status-pink": !issuers[credential.issuer] },
-									{ "status-green": issuers[credential.issuer] },
-									styles.category
-								)}>
-									<div className={styles.avatar}>
-										<img src={issuer.avatar} alt="Issuer"/>
-									</div>
-									{issuer.name}
-								</div>
-								{moment( credential.expirationDate ).isBefore( moment() ) &&
-								<div className={cn( { "status-yellow": true }, styles.category )}>
-									Expired
+								{type.kind === 'token' &&
+								<div className={cn( { "category-token": true }, styles.category )}>
+									Token
 								</div>
 								}
+								{credential.type.map( ct =>
+									<div key={ct} className={cn(
+										{ "category-vc": ct === 'VerifiableCredential' },
+										{ "category-vc-id": ct === 'IdentityCard' },
+										{ "category-vc-trusted": ct === 'TrustedCredential' },
+										{ "category-vc-health": ct === 'VaccinationCertificate' },
+										{ "category-erc20": ct === 'ERC-20' || ct === 'ERC20' },
+										{ "category-erc721": ct === 'ERC-721' },
+										{ "category-tokenized": ct === 'TokenizedMoney' },
+										{ "category-generic": ct !== '' },
+										styles.category
+									)}>
+										{ct}
+									</div>
+								)}
 							</div>
-							<div className={styles.counter}>{credential.proof.length} Signers</div>
 						</div>
 						<div className={styles.info}>
 							{type.description}
 						</div>
-						<div className={styles.nav}>
-							{navLinks.map( ( x, index ) => (
-								<button
-									className={cn(
-										{ [styles.active]: index === activeIndex },
-										styles.link
-									)}
-									onClick={() => setActiveIndex( index )}
-									key={index}
-								>
-									{x}
-								</button>
-							) )}
-						</div>
-						{activeIndex === 0 &&
-						<Claims className={styles.users} claims={credential.credentialSubject}/>
-						}
-						{activeIndex === 1 &&
-						<Proofs className={styles.users} items={proofs}/>
-						}
-						{activeIndex === 2 &&
-						<RootOfTrust className={styles.users} items={rootOfTrust} loading={verifying}/>
-						}
-						{activeIndex === 3 &&
-						<Raw className={styles.users} credential={credential}/>
-						}
-						{activeIndex === 4 &&
-						<Raw className={styles.users} credential={toEUCertificate(credential)}/>
+						{type.kind === 'vc' ?
+							<>
+								<div className={styles.nav}>
+									{navLinks.filter( link => link !== 'EU' || type.title === 'Vaccination Certificate' ).map( ( x, index ) => (
+										<button
+											className={cn(
+												{ [styles.active]: index === activeIndex },
+												styles.link
+											)}
+											onClick={() => setActiveIndex( index )}
+											key={index}
+										>
+											{x}
+										</button>
+									) )}
+								</div>
+								{activeIndex === 0 &&
+								<Claims className={styles.users} claims={credential.credentialSubject}/>
+								}
+								{activeIndex === 1 &&
+								<Proofs className={styles.users} items={proofs}/>
+								}
+								{activeIndex === 2 &&
+								<RootOfTrust className={styles.users} items={rootOfTrust} loading={verifying}/>
+								}
+								{activeIndex === 3 &&
+								<Raw className={styles.users} credential={credential}/>
+								}
+								{activeIndex === 4 &&
+								<Raw className={styles.users} credential={toEUCertificate( credential )}/>
+								}
+							</> :
+							<>
+								<div className={styles.amount}>
+									<span className={styles.text}>{balance} {credential.symbol}</span>
+								</div>
+								<div className={styles.token}>
+									<span className={styles.label}>Name: </span>
+									<span className={styles.text}>{credential.name}</span>
+								</div>
+								<div className={styles.token}>
+									<span className={styles.label}>Symbol: </span>
+									<span className={styles.text}>{credential.symbol}</span>
+								</div>
+								<div className={styles.token}>
+									<span className={styles.label}>Address: </span>
+									<span className={styles.text}>{credential.address}</span>
+								</div>
+								{type.title === 'ERC-20 Token' &&
+								<div className={styles.token}>
+									<span className={styles.label}>Decimals: </span>
+									<span className={styles.text}>{credential.decimals}</span>
+								</div>
+								}
+								{type.title === 'ERC-20 Token' &&
+								<div className={styles.token}>
+									<span className={styles.label}>Total Supply: </span>
+									<span className={styles.text}>
+										{credential.totalSupply ? credential.totalSupply / 10 ** credential.decimals : 0}
+									</span>
+								</div>
+								}
+								{type.title === 'NFT Token' &&
+								<>
+									<div className={styles.token}>
+										<span className={styles.label}>Token URI: </span>
+										<span className={styles.text}>{credential.uri}</span>
+									</div>
+									<div className={styles.token}>
+										<span className={styles.label}>Owner: </span>
+										<span className={styles.text}>{credential.owner}</span>
+									</div>
+								</>
+								}
+							</>
 						}
 					</div>
 				</div>
-				<Modal
-					visible={visibleModalVerification}
-					onClose={() => setVisibleModalVerification( false )}
-				>
-					<Checkout results={verification || {}} loading={verifying}/>
-				</Modal>
 			</div>
 		</>
 	);

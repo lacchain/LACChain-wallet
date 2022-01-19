@@ -98,6 +98,7 @@
     
 .name
     +body-bold-1
+    font-size: 18px
 
 .code
     display: flex
@@ -177,4 +178,35 @@
     
 .text
     margin-right: auto
-    
+
+.icon_loader
+    position: relative
+    display: flex
+    justify-content: center
+    align-items: center
+    flex-shrink: 0
+    width: 40px
+    height: 40px
+    margin-right: 20px
+    background: $neutrals6
+    border: 2px solid $neutrals6
+    border-radius: 50%
+    transition: all .2s
+    svg
+        fill: $neutrals4
+        transition: fill .2s
+    .loader
+        position: absolute
+        top: -3px
+        left: -3px
+        right: -3px
+        bottom: -3px
+        background: $neutrals8
+        +dark
+            background: $neutrals1
+
+.details
+    flex-grow: 1
+
+.subtitle
+    +body-bold-2

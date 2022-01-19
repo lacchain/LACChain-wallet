@@ -8,9 +8,9 @@ export default {
           "type": "address"
         },
         {
-          "internalType": "bytes32",
-          "name": "_tlType",
-          "type": "bytes32"
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
         }
       ],
       "stateMutability": "nonpayable",
@@ -114,6 +114,11 @@ export default {
           "type": "string"
         },
         {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
           "internalType": "uint256",
           "name": "expires",
           "type": "uint256"
@@ -122,6 +127,19 @@ export default {
           "internalType": "uint8",
           "name": "status",
           "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -155,35 +173,9 @@ export default {
     },
     {
       "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "renounceOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tlType",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -212,6 +204,11 @@ export default {
           "type": "string"
         },
         {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
           "internalType": "uint256",
           "name": "_expires",
           "type": "uint256"
@@ -232,6 +229,11 @@ export default {
         {
           "internalType": "string",
           "name": "_did",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_name",
           "type": "string"
         },
         {

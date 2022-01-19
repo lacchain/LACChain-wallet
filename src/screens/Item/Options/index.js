@@ -1,13 +1,16 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./Options.module.sass";
-import Icon from "../../../components/Icon";
 import Actions from "../../../components/Actions";
+import ActionsToken from "../../../components/Actions/token";
 
-const Options = ({ className, credential }) => {
+const Options = ({ className, item, type }) => {
   return (
     <div className={cn(styles.options, className)}>
-      <Actions className={styles.actions} credential={credential}/>
+        {type.kind === 'token' ?
+            <ActionsToken className={styles.actions} token={item}/> :
+            <Actions className={styles.actions} item={item}/>
+        }
     </div>
   );
 };

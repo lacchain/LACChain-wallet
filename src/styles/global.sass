@@ -1,0 +1,36 @@
+@import ./helpers
+
+.icons
+  position: relative
+  display: block
+  justify-content: center
+  align-items: center
+  flex-shrink: 0
+  width: 40px
+  height: 40px
+  margin-left: 45%
+  margin-top: 20%
+  background: $neutrals6
+  border: 2px solid $neutrals6
+  border-radius: 50%
+  transition: all .2s
+
+  .label
+    display: block
+    width: 250px
+    margin-top: 50px
+    margin-left: -50px
+
+  svg
+    fill: $neutrals4
+    transition: fill .2s
+
+  .loader
+    position: absolute
+    top: -3px
+    left: -3px
+    right: -3px
+    bottom: -3px
+    background: $neutrals8
+    +dark
+      background: $neutrals1

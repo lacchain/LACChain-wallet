@@ -1,0 +1,39 @@
+@import ../../../styles/helpers
+
+.item
+    display: flex
+    align-items: center
+    padding-bottom: 6px
+    border-bottom: 1px solid $neutrals6
+    +dark
+        border-color: $neutrals3
+    &:not(:last-child)
+        margin-bottom: 16px
+
+.left
+    display: inline-block
+    margin-top: 5px
+    float: left
+    transform: scale(1.5)
+
+.reward
+    position: absolute
+    right: -5px
+    bottom: -5px
+    img
+        max-width: 25px
+    
+.details
+    flex-grow: 1
+
+.position
+    color: $neutrals4
+
+.name
+    display: inline-block
+    font-size: 14px
+    font-weight: 500
+    padding-left: 10px
+
+.value
+    text-overflow: ellipsis
