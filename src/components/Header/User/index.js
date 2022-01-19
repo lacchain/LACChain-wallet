@@ -18,7 +18,6 @@ const User = ({ className }) => {
   const [syncing, setSyncing] = useState( false );
   const { account, user, update } = useAuthContext();
   const displayAccount = account ? `${account.substring( 0, 7 )} ... ${account.substring( 37 )}` : '';
-  const did = user ? `${user.did.substring( 0, 19 )} ... ${user.did.substring( 51 )}` : '';
 
   const items = [
     {

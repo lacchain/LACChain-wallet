@@ -12,6 +12,7 @@ import Token from "./screens/Item/token";
 import { PrivateRoute } from "./utils/PrivateRoute";
 import LoaderCircle from "./components/LoaderCircle";
 import { useAuthContext } from "./contexts/authContext";
+import Import from "./screens/Import";
 
 function App() {
     const { authorizing } = useAuthContext();
@@ -63,10 +64,10 @@ function App() {
                 />
                 <Route
                     exact
-                    path="/login"
+                    path="/import"
                     render={() => (
                         <Page>
-                            <Login/>
+                            <Import />
                         </Page>
                     )}
                 />

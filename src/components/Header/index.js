@@ -6,6 +6,7 @@ import Icon from "../Icon";
 import Image from "../Image";
 import Notification from "./Notification";
 import User from "./User";
+import { useAuthContext } from "../../contexts/authContext";
 
 const nav = [
   {
@@ -15,16 +16,14 @@ const nav = [
   {
     url: "/verification",
     title: "Verification",
-  },
-  {
-    url: "/upload-details",
-    title: "Issuance",
   }
 ];
 
 const Headers = () => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [search, setSearch] = useState("");
+
+  const { user } = useAuthContext();
 
   const handleSubmit = (e) => {
     alert();
@@ -88,7 +87,9 @@ const Headers = () => {
         >
           Connect Wallet
         </Link> */}
-        <User className={styles.user} />
+        {user &&
+          <User className={styles.user}/>
+        }
         <button
           className={cn(styles.burger, { [styles.active]: visibleNav })}
           onClick={() => setVisibleNav(!visibleNav)}

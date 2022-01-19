@@ -12,14 +12,14 @@ import { createKeyPair } from "@lacchain/did/lib/utils";
 import { sendVC } from "../../utils/mailbox";
 import { registerCredential } from "../../utils/credentials";
 import { useAuthContext } from "../../contexts/authContext";
-import { Redirect } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import LoaderCircle from "../../components/LoaderCircle";
 import Modal from "../../components/Modal";
 
 const breadcrumbs = [
   {
-    title: "Sign In",
-    url: "/login",
+    title: "Import",
+    url: "/import",
   },
   {
     title: "Register",
@@ -128,8 +128,8 @@ const Register = ({ history }) => {
           <div className={styles.top}>
             <h3 className={cn("h4", styles.title)}>Create new account</h3>
             <div className={styles.info}>
-              You need to provide your name and email to create an account. If you did that, then you can {" "}
-              <strong>login</strong> instead.
+              You need to provide your name and email to create an account. If you already have a backup copy of your wallet, then you can {" "}
+              <Link to="/import"><strong>import</strong></Link> instead.
             </div>
           </div>
           <div className={styles.row}>

@@ -116,7 +116,10 @@ const BackupAndRestore = () => {
 				</div>
 			</form>
 			<Modal visible={visibleModal} closable={false} onClose={() => setVisibleModal( false )}>
-				<AlertSuccess onAccept={() => setVisibleModal( false )} title="Wallet Successfully Recovered">
+				<AlertSuccess onAccept={() => {
+					setVisibleModal( false );
+					window.location = '/';
+				}} title="Wallet Successfully Recovered">
 					You successfully imported the <span>encrypted</span> wallet data
 				</AlertSuccess>
 			</Modal>
