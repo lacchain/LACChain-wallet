@@ -28,6 +28,7 @@ const BackupAndRestore = () => {
 				const decrypted = await decrypt( evt.target.result );
 				setPreview( JSON.stringify( decrypted, null, 2) );
 				setFile( evt.target.result );
+				setError( null );
 			} catch( error ) {
 				setError( error.message );
 			}

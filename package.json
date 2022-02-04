@@ -4,6 +4,10 @@
   "private": true,
   "dependencies": {
     "@digitalbazaar/cborld": "^4.2.0",
+    "@fortawesome/free-solid-svg-icons": "^5.15.4",
+    "@fortawesome/free-brands-svg-icons": "^5.15.4",
+    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/react-fontawesome": "^0.1.17",
     "@lacchain/did": "^1.2.2",
     "@nuintun/qrcode": "^3.0.1",
     "@testing-library/jest-dom": "^5.11.4",

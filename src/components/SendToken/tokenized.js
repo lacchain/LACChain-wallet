@@ -62,7 +62,7 @@ export const TokenizedMoney = ( { className, token, onFinish } ) => {
 					</p>
 				</div>
 				<div className={styles.btns}>
-					<button className={cn( "button-pink", styles.button )} onClick={() => send()}>
+					<button className={cn( "button-pink", { 'disabled': sending }, styles.button )} onClick={() => send()}>
 						{!sending ?
 							"Send" :
 							<Loader className={styles.loader} color="white"/>

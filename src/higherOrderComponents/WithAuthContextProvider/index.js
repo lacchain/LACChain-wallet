@@ -8,11 +8,12 @@ function WithAuthContextProvider( { children } ) {
 		account,
 		user,
 		updated,
-		encrypt,
-		decrypt,
 		provider,
 		signin,
 		login,
+		decrypt,
+		showLogin,
+		setShowLogin,
 		logout,
 		update
 	} = useProvideAuth()
@@ -23,11 +24,12 @@ function WithAuthContextProvider( { children } ) {
 			account,
 			user,
 			updated,
-			encrypt,
-			decrypt,
 			provider,
 			signin,
 			login,
+			decrypt,
+			showLogin,
+			setShowLogin,
 			logout,
 			update
 		}}

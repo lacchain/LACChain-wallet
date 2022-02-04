@@ -18,7 +18,7 @@ export const ERC721 = ( { className, token, onFinish } ) => {
 
 	const transfer = () => {
 		setSending( true );
-		sendTokens( token.address, user.mainKeyPair.privateKey, receiver ).then( result => {
+		sendTokens( token.address, user.did, user.mainKeyPair.privateKey, receiver, token.tokenId ).then( result => {
 			console.log( result );
 			setSending( false );
 			setStatus( 1 );
@@ -51,7 +51,7 @@ export const ERC721 = ( { className, token, onFinish } ) => {
 					</p>
 				</div>
 				<div className={styles.btns}>
-					<button className={cn( "button-pink", styles.button )} onClick={() => transfer()}>
+					<button className={cn( "button-pink", { 'disabled': sending }, styles.button )} onClick={() => transfer()}>
 						{!sending ?
 							"Transfer" :
 							<Loader className={styles.loader} color="white"/>

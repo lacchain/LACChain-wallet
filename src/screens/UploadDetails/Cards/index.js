@@ -1,5 +1,4 @@
 import React from "react";
-import cn from "classnames";
 import styles from "./Cards.module.sass";
 import Icon from "../../../components/Icon";
 

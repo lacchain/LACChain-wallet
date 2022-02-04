@@ -15,8 +15,40 @@ import { useAuthContext } from "./contexts/authContext";
 import Import from "./screens/Import";
 
 function App() {
-    const { authorizing } = useAuthContext();
-	if( authorizing ) {
+    const { provider, user, authorizing } = useAuthContext();
+    if( !provider && !user ) {
+        return (
+        <Router>
+            <Switch>
+                <Route
+                    exact
+                    path="/register"
+                    render={props => (
+                        <Page>
+                            <Register {...props} />
+                        </Page>
+                    )}
+                />
+                <Route
+                    exact
+                    path="/import"
+                    render={() => (
+                        <Page>
+                            <Import />
+                        </Page>
+                    )}
+                />
+                <Route
+                    path="/"
+                    render={() => (
+                        <Page>
+                            <Login />
+                        </Page>
+                    )}
+                />
+            </Switch>
+        </Router> );
+    } if( provider && authorizing ) {
 		return (
             <div className="icons">
                 <LoaderCircle className="loader" />

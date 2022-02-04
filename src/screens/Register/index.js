@@ -31,13 +31,20 @@ const Register = ({ history }) => {
   const [familyName, setFamilyName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repassword, setRepassword] = useState("");
+  const [error, setError] = useState("");
   const [step, setStep] = useState(0);
   const [sending, setSending] = useState(false);
 
-  const { authorizing, user: currentUser, signin } = useAuthContext();
+  const { provider, authorizing, user: currentUser, signin } = useAuthContext();
   if( !authorizing && currentUser ) return <Redirect to="/" replace />;
 
   const handleSubmit = async() => {
+    if( !provider ){
+      if( !password ) return setError('Password is empty');
+      if( password !== repassword ) return setError('Both password must be equal');
+    }
     setSending( true );
     const encryptionKeyPair = await generateKeyPair();
     const controllerKeyPair = createKeyPair();
@@ -90,7 +97,7 @@ const Register = ({ history }) => {
     await sendVC( user, user.did, identityVC.vc );
     user.credentials = [ identityVC.vc ];
     setStep( 5 );
-    await signin( user );
+    if( provider ) await signin( user ); else await signin( user, email, password );
     setSending( false );
     history.push( '/' );
   }
@@ -116,8 +123,8 @@ const Register = ({ history }) => {
                       { step >= 0 && <li><Icon name="check" size="16"/> Generating a new DID</li> }
                       { step >= 1 && <li><Icon name="check" size="16"/> Registering Public Keys</li> }
                       { step >= 2 && <li><Icon name="check" size="16"/> Changing Controller</li> }
-                      { step >= 3 && <li><Icon name="check" size="16"/> Signing Identity Credential</li> }
-                      { step >= 4 && <li><Icon name="check" size="16"/> Sending Identity Credential</li> }
+                      { step >= 3 && <li><Icon name="check" size="16"/> Signing LACChain ID Credential</li> }
+                      { step >= 4 && <li><Icon name="check" size="16"/> Sending LACChain ID Credential</li> }
                       { step >= 5 && <li><Icon name="check" size="16"/> Encrypting Data</li> }
                     </ul>
                   </div>
@@ -130,6 +137,10 @@ const Register = ({ history }) => {
             <div className={styles.info}>
               You need to provide your name and email to create an account. If you already have a backup copy of your wallet, then you can {" "}
               <Link to="/import"><strong>import</strong></Link> instead.
+              {error &&
+                  <div className={styles.error}>
+                    {error}
+                  </div>}
             </div>
           </div>
           <div className={styles.row}>
@@ -182,6 +193,33 @@ const Register = ({ history }) => {
                     />
                   </div>
                 </div>
+                {!provider &&
+                <div className={styles.item}>
+                  <div className={styles.category}>Account Info</div>
+                  <div className={styles.fieldset}>
+                    <TextInput
+                        className={styles.field}
+                        value={password}
+                        onChange={e => setPassword( e.target.value )}
+                        label="password"
+                        name="Password"
+                        type="password"
+                        placeholder="Enter your password"
+                        required
+                    />
+                    <TextInput
+                        className={styles.field}
+                        value={repassword}
+                        onChange={e => setRepassword( e.target.value )}
+                        label="Re-password"
+                        name="Re-Password"
+                        type="password"
+                        placeholder="Enter your password again"
+                        required
+                    />
+                  </div>
+                </div>
+                }
               </div>
               <div className={styles.note}>
                 To create your account you should encrypt the data through your

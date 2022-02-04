@@ -45,7 +45,9 @@ const SendCredential = ( { className, credential, onFinish } ) => {
 				</div>
 				<div className={styles.btns}>
 					<button
-						className={cn( "button-small", styles.button )}
+						className={cn( "button-small", {
+							'disabled': sending
+						}, styles.button )}
 						onClick={() => send()}
 					>
 						{sending ?

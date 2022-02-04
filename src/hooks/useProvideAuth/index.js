@@ -1,41 +1,56 @@
 import React, { useEffect, useState } from 'react'
 import * as ethUtil from "ethereumjs-util";
 import * as sigUtil from "eth-sig-util";
+import { encrypt, decrypt as passwordDecrypt } from "../../utils/crypt";
 
 function useProvideAuth() {
 	const provider = window.ethereum ? window.ethereum : null;
 
+	const [password, setPassword] = useState( "" );
 	const [account, setAccount] = useState( null );
 	const [user, setUser] = useState( null );
 	const [updated, setUpdated] = useState( new Date().getTime() );
+	const [encryptionKey, setEncryptionKey] = useState( null );
 	const [authorizing, setAuthorizing] = useState( !!provider );
+	const [showLogin, setShowLogin] = useState( false );
 
 	useEffect( () => {
-		if( provider && account ) login();
+		if( provider && account ) loginWithMetamask();
 	}, [account] );
 
 	const getEncryptionKey = async() => {
-		return provider.request( {
+		const key = await provider.request( {
 			method: 'eth_getEncryptionPublicKey',
 			params: [account]
 		} );
+		setEncryptionKey( key );
+		return key;
 	}
 
-	const encrypt = async data => {
-		const encryptionKey = await getEncryptionKey();
+	const encryptWithPassword = ( data, _password ) => {
+		return encrypt( data, _password );
+	}
+
+	const encryptWithMetamask = async data => {
+		const key = encryptionKey || await getEncryptionKey();
 
 		return ethUtil.bufferToHex( Buffer.from(
 			JSON.stringify(
-				sigUtil.encrypt( encryptionKey, { data }, 'x25519-xsalsa20-poly1305' )
+				sigUtil.encrypt( key, { data }, 'x25519-xsalsa20-poly1305' )
 			), 'utf8'
 		) );
 	}
 
-	const decrypt = async encrypted => {
+	const decryptWithMetamask = async encrypted => {
 		const decrypted = await provider.request( {
 			method: 'eth_decrypt',
 			params: [encrypted, account]
 		} );
+		return JSON.parse( decrypted );
+	}
+
+	const decryptWithPassword = async( encrypted, password ) => {
+		const decrypted = passwordDecrypt( encrypted, password );
 		return JSON.parse( decrypted );
 	}
 
@@ -49,29 +64,86 @@ function useProvideAuth() {
 				setAccount( accounts[0] );
 				window.location = '/';
 			} )
+		} else {
+			setShowLogin( true );
 		}
 	}, [] );
 
-	async function signin( user ){
-		setUser( user );
-		const encrypted = await encrypt( JSON.stringify( user ) );
+	async function signinWithMetamask( user ) {
+		const encrypted = await encryptWithMetamask( JSON.stringify( user ) );
 		localStorage.setItem( account, encrypted );
 	}
 
-	async function update( user ){
-		await signin( user );
+	async function signinWithPassword( user, email, password ) {
+		const encrypted = encryptWithPassword( JSON.stringify( user ), password );
+		setAccount( email );
+		setPassword( password );
+		localStorage.setItem( email, encrypted );
+	}
+
+	async function signin( user, email, password ) {
+		setUser( user );
+		if( !provider )
+			await signinWithPassword( user, email, password )
+		else
+			await signinWithMetamask( user );
+	}
+
+	async function update( user ) {
+		setUser( user );
+		if( provider )
+			await signinWithMetamask( user );
+		else
+			await signinWithPassword( user, account, password );
+
 		setUpdated( new Date().getTime() );
 	}
 
-	async function login() {
+	async function loginWithMetamask() {
 		const encrypted = localStorage.getItem( account );
 		if( !encrypted ) {
 			setUser( null );
 			setAuthorizing( false );
+			return false;
 		} else {
-			setUser( await decrypt( encrypted ) );
+			setUser( await decryptWithMetamask( encrypted ) );
 			setAuthorizing( false );
+			return true;
 		}
+	}
+
+	async function loginWithPassword( email, password ) {
+		const encrypted = localStorage.getItem( email );
+		if( !encrypted ) {
+			setUser( null );
+			setAuthorizing( false );
+			return false;
+		} else {
+			try {
+				setUser( await decryptWithPassword( encrypted, password ) );
+				setAccount( email );
+				setPassword( password );
+				setAuthorizing( false );
+				return true;
+			} catch( error ) {
+				return false;
+			}
+		}
+	}
+
+	async function decrypt( data, _password ) {
+		if( provider ) return await decryptWithMetamask( data );
+		else if( _password ) return await decryptWithPassword( data, _password );
+		return await decryptWithPassword( data, password );
+	}
+
+	async function login( _email, _password ) {
+		if( provider ) return await loginWithMetamask();
+		else
+			return _email && _password ?
+				await loginWithPassword( _email, _password ) :
+				await loginWithPassword( account, password );
+
 	}
 
 	function logout() {
@@ -82,10 +154,11 @@ function useProvideAuth() {
 	return {
 		authorizing,
 		account,
+		showLogin,
+		setShowLogin,
 		provider,
 		user,
 		updated,
-		encrypt,
 		decrypt,
 		signin,
 		login,

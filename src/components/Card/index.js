@@ -7,6 +7,7 @@ import { useAuthContext } from "../../contexts/authContext";
 import { getBalance } from "../../utils/erc20";
 import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
 import Icon from "../Icon";
+import { getBalance as getNFTBalance } from "../../utils/erc721";
 
 const Card = ( { className, item, onRemove } ) => {
 	const { user } = useAuthContext();
@@ -21,12 +22,15 @@ const Card = ( { className, item, onRemove } ) => {
 		if( type.kind === 'token' ) {
 			switch( type.title ){
 				case 'ERC-20 Token':
-				case 'NFT Token':
 					getBalance( item.address, user.did.replace('did:lac:main:', '') )
 						.then( balance => {
 							const amount = balance.toNumber() / 10**item.decimals;
 							setBalance( amount );
 						} );
+					break;
+				case 'NFT Token':
+					getNFTBalance( item.address, user.did.replace('did:lac:main:', ''), item.tokenId )
+						.then( balance => setBalance( balance ) );
 					break;
 				case 'Tokenized Money':
 					getTokenizedBalance( item.address ).then( balance => setBalance( balance ) );
@@ -43,13 +47,14 @@ const Card = ( { className, item, onRemove } ) => {
 				<div className={styles.preview}>
 					<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
 					<div className={styles.control}>
-						<Link className={styles.close} onClick={onRemove}>
+						<Link to="#" className={styles.close} onClick={onRemove}>
 							<Icon name="close" size="14"/>
 						</Link>
 						<div className={styles.topLeft}>{type.topLeft( item )}</div>
 						<div className={styles.topRight}>{type.topRight( {...item, balance} )}</div>
-						<div className={styles.title}>{type.title}</div>
-						<div className={styles.claim}>{type.claim( item )}</div>
+						<div className={styles.title}>{type.claim( item )}</div>
+						{type.icon(item) && <div className={styles.image}>{type.icon(item)}</div> }
+						<div className={styles.claim}>{type.title}</div>
 						<div className={styles.bottom}>{type.bottom( item )}</div>
 					</div>
 				</div>

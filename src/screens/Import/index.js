@@ -9,6 +9,7 @@ import Modal from "../../components/Modal";
 import { AlertSuccess } from "../../components/Alert";
 import { useAuthContext } from "../../contexts/authContext";
 import { useDropzone } from "react-dropzone";
+import Unlock from "../../components/Unlock";
 
 const breadcrumbs = [
 	{
@@ -28,8 +29,9 @@ const Import = () => {
 	const [restoring, setRestoring] = useState( false );
 	const [preview, setPreview] = useState( null );
 	const [visibleModal, setVisibleModal] = useState( false );
+	const [visibleUnlockModal, setVisibleUnlockModal] = useState( false );
 
-	const { account, decrypt, login } = useAuthContext();
+	const { provider, account, decrypt, login } = useAuthContext();
 
 	const onDrop = useCallback( acceptedFiles => {
 		const selected = acceptedFiles[0];
@@ -37,19 +39,31 @@ const Import = () => {
 		reader.readAsText( selected, "UTF-8" );
 		reader.onload = async function( evt ) {
 			try {
+				if( !provider ) {
+					setFile( evt.target.result );
+					setVisibleUnlockModal( true );
+					return;
+				}
 				const decrypted = await decrypt( evt.target.result );
-				setPreview( JSON.stringify( decrypted, null, 2) );
+				setPreview( JSON.stringify( decrypted, null, 2 ) );
 				setFile( evt.target.result );
+				setError( null );
 			} catch( error ) {
 				setError( error.message );
 			}
 		}
 	}, [] );
 
+	const onUnlock = result => {
+		setError( null );
+		setVisibleUnlockModal( false );
+		setPreview( JSON.stringify( result, null, 2 ) );
+	}
+
 	const restore = async data => {
 		setRestoring( true );
 		localStorage.setItem( account, data );
-		await sleep(1);
+		await sleep( 1 );
 		await login();
 		setRestoring( false );
 		setVisibleModal( true );
@@ -82,7 +96,7 @@ const Import = () => {
 												} )} {...getRootProps()}>
 													<input className={styles.load} type="file" {...getInputProps()} />
 													{error &&
-													<span className="status-pink">{error}</span>
+														<span className="status-pink">{error}</span>
 													}
 													{file <= 0 ?
 														<>
@@ -99,7 +113,8 @@ const Import = () => {
 											</div>
 										</div>
 									</form>
-									<Modal visible={visibleModal} closable={false} onClose={() => setVisibleModal( false )}>
+									<Modal visible={visibleModal} closable={false}
+										   onClose={() => setVisibleModal( false )}>
 										<AlertSuccess onAccept={() => {
 											setVisibleModal( false );
 											window.location = '/';
@@ -107,7 +122,10 @@ const Import = () => {
 											You successfully imported the <span>encrypted</span> wallet data
 										</AlertSuccess>
 									</Modal>
-
+									<Modal visible={visibleUnlockModal} closable={true}
+										   onClose={() => setVisibleUnlockModal( false )}>
+										<Unlock data={file} onFinish={onUnlock}/>
+									</Modal>
 								</div>
 							</div>
 							<div className={styles.btns}>

@@ -47,6 +47,7 @@ const AddToken = ( { className, onAdded } ) => {
 					symbol: token.symbol,
 					totalSupply: token.totalSupply,
 					uri: token.uri,
+					image: token.image,
 					tokenId,
 					owner: token.owner,
 					addedDate: moment().toISOString()
@@ -113,7 +114,7 @@ const AddToken = ( { className, onAdded } ) => {
 				}
 			</div>
 			<div className={styles.btns}>
-                <button className={cn( "button-pink", styles.button )} onClick={async () => {
+                <button className={cn( "button-pink", { 'disabled': adding }, styles.button )} onClick={async () => {
 					setAdding( true );
 					const id = type === 'ERC-721' ? `${type}:${address}:${tokenId}` : `${type}:${address}`;
 					if( !user.credentials.find( c => c.id === id ) ) {

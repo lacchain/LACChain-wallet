@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import axios from "axios";
 
 const abi = [
 	// Read-Only Functions
@@ -15,22 +16,27 @@ const abi = [
 
 export async function getInfo( address, id ) {
 	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
-	const totalSupply = await token.totalSupply()
+	const totalSupply = await token.totalSupply().catch( () => 0 )
+	const uri = await token.tokenURI( id );
+	const resource = await axios.get( uri ).then( result => result.data );
+
 	return {
 		name: await token.name(),
 		symbol: await token.symbol(),
 		totalSupply: totalSupply.toString(),
-		uri: await token.tokenURI( id ),
+		uri,
+		image: resource.image || '',
 		owner: await token.ownerOf( id )
 	};
 }
 
-export async function getBalance( address, account ) {
+export async function getBalance( address, account, tokenId ) {
 	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
-	return await token.balanceOf( account );
+	const owner = await token.ownerOf( tokenId );
+	return owner.toLowerCase() === account.toLowerCase() ? 1 : 0;
 }
 
-export async function sendTokens( address, privateKey, receiver ) {
+export async function sendTokens( address, from, privateKey, receiver, tokenId ) {
 	const token = new ethers.Contract( address, abi, new ethers.Wallet( privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
-	return await token.transfer( receiver.replace('did:lac:main:', ''), 1 );
+	return await token.transferFrom( from.replace('did:lac:main:', ''), receiver.replace('did:lac:main:', ''), tokenId );
 }

@@ -67,11 +67,9 @@ const Item = ( { match } ) => {
 						} );
 					break;
 				case 'NFT Token':
-					getNFTBalance( credential.address, user.did.replace('did:lac:main:', '') )
-						.then( balance => {
-							const amount = balance.toNumber() / 10**credential.decimals;
-							setBalance( isNaN( amount ) ? 0 : amount );
-						} );
+					getNFTBalance( credential.address, user.did.replace('did:lac:main:', ''), credential.tokenId )
+						.then( balance => setBalance( balance ) );
+					break;
 				case 'Tokenized Money':
 					getTokenizedBalance( credential.address ).then( balance => setBalance( balance ) );
 			}
@@ -89,16 +87,18 @@ const Item = ( { match } ) => {
 								<div className={styles.control}>
 									<div className={styles.topLeft}>{type.topLeft( credential )}</div>
 									<div className={styles.topRight}>{type.topRight( { ...credential, balance } )}</div>
-									<div className={styles.title}>{type.title}</div>
-									<div className={styles.claim}>{type.claim( credential )}</div>
+									<div className={styles.title}>{type.claim( credential )}</div>
+									{type.icon(credential) && <div className={styles.image}>{type.icon(credential)}</div> }
+									<div className={styles.claim}>{type.title}</div>
 									<div className={styles.bottom}>{type.bottom( credential )}</div>
 								</div>
 							</div>
 						</div>
-						<Options className={styles.options} item={credential} type={type}/>
+						{type.kind === 'token' && type.title === 'NFT Token' && balance === 0 ? <></> :
+						<Options className={styles.options} item={credential} type={type}/> }
 					</div>
 					<div className={styles.details}>
-						<h1 className={cn( "h5", styles.title2 )}>{type.title}</h1>
+						<h1 className={cn( "h5", styles.title2 )}>{type.kind === 'vc' ? type.title : type.claim( credential )}</h1>
 						<div className={styles.cost}>
 							<div className={styles.categories}>
 								{type.kind === 'token' &&
@@ -190,6 +190,10 @@ const Item = ( { match } ) => {
 								}
 								{type.title === 'NFT Token' &&
 								<>
+									<div className={styles.token}>
+										<span className={styles.label}>Token ID: </span>
+										<span className={styles.text}>{credential.tokenId}</span>
+									</div>
 									<div className={styles.token}>
 										<span className={styles.label}>Token URI: </span>
 										<span className={styles.text}>{credential.uri}</span>

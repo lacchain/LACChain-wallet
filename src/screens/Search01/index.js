@@ -15,17 +15,14 @@ const navLinks = [{
 	label: "All",
 	context: '*'
 }, {
-	label: "Health",
-	context: 'https://credentials-library.lacchain.net/credentials/health/vaccination/v1'
+	label: "Credentials",
+	context: 'https://'
 }, {
-	label: "Education",
-	context: 'https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1'
-}, {
-	label: "Identity",
-	context: 'https://credentials-library.lacchain.net/credentials/identity/v1'
+	label: "Tokens",
+	context: 'token://'
 }, {
 	label: "Other",
-	context: 'https://credentials-library.lacchain.net/credentials/other/v1'
+	context: 'other://'
 }];
 
 const dateOptions = ["Newest", "Oldest"];
@@ -74,8 +71,8 @@ const Search = () => {
                                 onClick={() => {
                                 	setActiveIndex( index );
 									setFiltered( results.filter( c => {
-										const context = c['@context']?.slice(-1)[0];
-										return context === x.context || x.context === '*';
+										const context = Array.isArray(c['@context']) ? c['@context']?.slice(-1)[0] : c['@context'];
+										return context?.startsWith(x.context) || x.context === '*';
 									} ) );
 								}}
                                 key={index}
