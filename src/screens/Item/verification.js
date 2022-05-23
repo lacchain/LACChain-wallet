@@ -17,11 +17,13 @@ async function verifyFullCredential( credential ) {
 	const proofs = [];
 	const verification = await verifyCredential( credential );
 	for( const proof of credential.proof ) {
+		const vm = proof.verificationMethod;
+		const did = vm.substring( 0, vm.indexOf('#') );
 		proofs.push( {
 			position: 'Issuer',
-			did: proof.id,
-			...( issuers[proof.id] || issuers.unknown ),
-			valid: proof.id === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
+			did: did,
+			...( issuers[did] || issuers.unknown ),
+			valid: did === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
 		} );
 	}
 	return { proofs, verification };

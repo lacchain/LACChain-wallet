@@ -22,15 +22,23 @@ import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
 
 const navLinks = ["Claims", "Proofs", "Root of Trust", "Raw", "EU"];
 
+const keyType = {
+	'EcdsaSecp256k1Signature2019': 'Ethereum SECP256K Signature',
+	'RsaSignature2018': 'RSA X.509 Signature',
+	'BbsBlsSignature2020': 'ZKP BBS+ Signature'
+};
 async function verifyFullCredential( credential ) {
 	const proofs = [];
 	const verification = await verifyCredential( credential );
 	for( const proof of credential.proof ) {
+		const vm = proof.verificationMethod;
+		const did = vm.substring( 0, vm.indexOf('#') );
 		proofs.push( {
-			position: 'Issuer',
-			did: proof.id,
-			...( issuers[proof.id] || issuers.unknown ),
-			valid: proof.id === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
+			position: did.toLocaleLowerCase() === credential.issuer.toLowerCase() ? 'Issuer' : 'Signer',
+			type: keyType[proof.type],
+			did,
+			...( issuers[did] || issuers.unknown ),
+			valid: did === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
 		} );
 	}
 	return { proofs, verification };

@@ -57,12 +57,13 @@ const Actions = ( { className, item } ) => {
 				} );
 			},
 		},
-		{
-			title: "Create Presentation",
-			icon: "edit",
-			action: () => setVisibleModalBurn( true ),
-		},
 	];
+
+	if( item.proof.find( p => p.type === 'BbsBlsSignature2020' ) ) items.push({
+		title: "Create Presentation",
+		icon: "edit",
+		action: () => setVisibleModalBurn( true ),
+	});
 
 	return (
 		<>

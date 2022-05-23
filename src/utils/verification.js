@@ -42,6 +42,7 @@ export const verifyCredential = async vc => {
 	const issuerSignatureValid = result[2];
 	const additionalSigners = result[3];
 	const isNotExpired = result[4];
+	console.log('result', result);
 
 	return { credentialExists, isNotRevoked, issuerSignatureValid, additionalSigners, isNotExpired };
 }

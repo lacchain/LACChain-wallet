@@ -4,13 +4,25 @@ import { faHeartbeat, faSchool, faUser, faIdCard, faMoneyCheck } from '@fortawes
 import { faEthereum } from '@fortawesome/free-brands-svg-icons'
 
 export const types = {
+	'https://w3id.org/vaccination/v1': {
+		kind: 'vc',
+		title: "Vaccination Certificate",
+		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
+		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
+		claim: ( { credentialSubject } ) => `${credentialSubject.vaccine.disease} (${credentialSubject.vaccine.atcCode})`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "Vaccination Credential that certifies that you have received a vaccination",
+		image: "/images/cards/vc-health.png",
+		image2x: "/images/cards/vc-health.png"
+	},
 	'https://credentials-library.lacchain.net/credentials/health/vaccination/v1': {
 		kind: 'vc',
 		title: "Vaccination Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
 		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
 		claim: ( { credentialSubject } ) => `${credentialSubject.vaccine.manufacturer} (${credentialSubject.vaccine.vaccine})`,
-		bottom: ( { issuer } ) => `Issuer ${issuer.substr( 0, 15 )} ... ${issuer.substr( issuer.length - 13 )}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
 		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
 		description: "COVID-19 Vaccination Credential that certifies that you have received the vaccination against the new coronavirus (COVID-19)",
 		image: "/images/cards/vc-health.png",
@@ -22,7 +34,7 @@ export const types = {
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
 		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
 		claim: ( { credentialSubject } ) => `${credentialSubject.givenName} ${credentialSubject.familyName}`,
-		bottom: ( { issuer } ) => `Issuer ${issuer.substr( 0, 15 )} ... ${issuer.substr( issuer.length - 13 )}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
 		icon: () => <FontAwesomeIcon icon={faSchool} size="2x" />,
 		description: "Introductory course of node deployment in LACChain Besu for developers, issued by LACChain Academy",
 		signatures: 3,
@@ -35,7 +47,7 @@ export const types = {
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
 		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
 		claim: ( { credentialSubject } ) => `${credentialSubject.givenName} ${credentialSubject.familyName} ${credentialSubject.lastName}`,
-		bottom: ( { issuer } ) => `Issuer ${issuer.substr( 0, 15 )} ... ${issuer.substr( issuer.length - 13 )}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
 		icon: () => <FontAwesomeIcon icon={faUser} size="2x" />,
 		description: "This is an auto-issued LACChain ID credential",
 		image: "/images/cards/vc-id.png",
@@ -47,7 +59,7 @@ export const types = {
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
 		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
 		claim: item => `${item.type[item.type.length - 1]}`,
-		bottom: ( { issuer } ) => `Issuer ${issuer.substr( 0, 15 )} ... ${issuer.substr( issuer.length - 13 )}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
 		icon: () => <FontAwesomeIcon icon={faIdCard} size="2x" />,
 		description: "This is a generic Verifiable Credential",
 		image: "/images/cards/vc.png",

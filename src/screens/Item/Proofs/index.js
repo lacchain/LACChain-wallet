@@ -18,6 +18,7 @@ const Proofs = ( { className, items }) => {
               <div className={styles.position}>{x.position}</div>
               <div className={styles.name}>{x.name}</div>
               <div>{x.did}</div>
+              <div>{x.type}</div>
             </div>
           </div>
         ))}
