@@ -71,7 +71,7 @@ export async function registerCredential( vc ) {
 		new ethers.Wallet( '0x' + issuer.privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
 
 	const credentialHash = getCredentialHash( vc, issuer.address );
-	const signature = await signCredential( credentialHash, issuer.privateKey );
+	const signature = signCredential( credentialHash, issuer.privateKey );
 
 	const tx = await claimsVerifier.registerCredential( subjectAddress, credentialHash,
 		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
@@ -88,4 +88,26 @@ export async function registerCredential( vc ) {
 	}];
 
 	return { tx, vc };
+}
+
+export function presentCredential( vc, user ) {
+	const hash = sha256( JSON.stringify( vc ) );
+	const signature = signCredential( `0x${hash}`, user.mainKeyPair.privateKey );
+
+	const vp = {
+		"@context": [
+			"https://www.w3.org/2018/credentials/v1",
+		],
+		type: "VerifiablePresentation",
+		verifiableCredential: [vc],
+		proof: [{
+			type: "EcdsaSecp256k1Signature2019",
+			created: moment().toISOString(),
+			proofPurpose: "assertionMethod",
+			verificationMethod: `${user.did}#vm-0`,
+			proofValue: signature
+		}]
+	};
+
+	return vp;
 }

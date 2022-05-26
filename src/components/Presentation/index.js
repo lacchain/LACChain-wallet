@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./Burn.module.sass";
 import SelectClaims from "./SelectClaims";
-import { toCborQR } from "../../utils/verification";
+import { deriveCredential, toQRCode } from "../../utils/verification";
+import { presentCredential } from "../../utils/credentials";
+import { useAuthContext } from "../../contexts/authContext";
 
-const Burn = ( { className, credential } ) => {
-    const claimNames = Object.keys( credential.credentialSubject || {} );
-    const [qr, setQRCode] = useState( "" );
-    const [selected, setSelected] = useState( claimNames );
+const Presentation = ( { className, credential } ) => {
+	const claimNames = Object.keys( credential.credentialSubject || {} );
+	const [qr, setQRCode] = useState( "" );
+	const [selected, setSelected] = useState( claimNames );
+	const { user } = useAuthContext();
+
 	return (
 		<div className={cn( className, styles.transfer )}>
 			<div className={cn( "h4", styles.title )}>Presentation</div>
@@ -21,18 +25,15 @@ const Burn = ( { className, credential } ) => {
 			</div>
 			<div className={styles.btns}>
                 {!qr && <button className={cn( "button-pink", styles.button )} onClick={() => {
-				    const vc = {
-				        ...credential,
-                        credentialSubject: selected.reduce( (a, i) =>
-                            ({...a, [i]: credential.credentialSubject[i]}), {})
-				    }
-                    toCborQR( vc ).then( qr => {
-                        setQRCode( qr );
-                    });
+				    				deriveCredential( credential, selected ).then( async zkp => {
+											const vp = presentCredential( zkp, user );
+											const qr = await toQRCode( vp );
+											setQRCode( qr );
+										} );
                 }}>Continue</button> }
 			</div>
 		</div>
 	);
 };
 
-export default Burn;
+export default Presentation;

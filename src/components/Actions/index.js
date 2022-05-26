@@ -4,16 +4,16 @@ import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./Actions.module.sass";
 import SendCredential from "../SendCredential";
 import RemoveSale from "../RemoveSale";
-import Burn from "../Burn";
 import Report from "../Report";
 import Icon from "../Icon";
 import Modal from "../../components/Modal";
 import {
 	getRootOfTrust,
-	toCborQR,
+	toCborQR, toQRCode,
 	verifyCredential, verifyRootOfTrust
 } from "../../utils/verification";
 import CredentialVerfication from "../../screens/Item/Control/CredentialVerfication";
+import Presentation from "../Presentation";
 
 const Actions = ( { className, item } ) => {
 	const [visible, setVisible] = useState( false );
@@ -51,7 +51,7 @@ const Actions = ( { className, item } ) => {
 			title: "Show QR Code",
 			icon: "report",
 			action: () => {
-				toCborQR( item ).then( qr => {
+				toQRCode( item ).then( qr => {
 					setQRCode( qr );
 					setVisibleModalReport( true );
 				} );
@@ -67,7 +67,7 @@ const Actions = ( { className, item } ) => {
 
 	return (
 		<>
-			<OutsideClickHandler onOutsideClick={ () => console.log('out') }>
+			<OutsideClickHandler onOutsideClick={ () => {} }>
 				<div
 					className={cn( styles.actions, className, {
 						[styles.active]: true,
@@ -102,7 +102,7 @@ const Actions = ( { className, item } ) => {
 				visible={visibleModalBurn}
 				onClose={() => setVisibleModalBurn( false )}
 			>
-				<Burn credential={item}/>
+				<Presentation credential={item}/>
 			</Modal>
 			<Modal
 				visible={visibleModalReport}

@@ -59,10 +59,18 @@ const Item = ( { match } ) => {
 	useEffect( () => {
 		if( type.kind === 'vc' ) {
 			verifyFullCredential( credential ).then( async result => {
-				setProofs( result.proofs );
 				const rootOfTrust = await getRootOfTrust( credential );
 				const validation = await verifyRootOfTrust( rootOfTrust, credential.issuer );
-				setRootOfTrust( rootOfTrust.map( ( rot, i ) => ( { ...rot, valid: validation[i] } ) ) );
+				const trustTree = rootOfTrust.map( ( rot, i ) => ( { ...rot, valid: validation[i] } ) );
+				if( rootOfTrust.length > 0 )
+					result.proofs = result.proofs.map( proof => ({
+						...proof,
+						name: proof.did === credential.issuer ?
+								rootOfTrust.find( r => credential.issuer.endsWith(r.address) )?.name :
+								proof.name
+					}) );
+				setProofs( result.proofs );
+				setRootOfTrust( trustTree );
 				setIsVerifying( false );
 			} );
 		} else {

@@ -1,15 +1,29 @@
 import crypto from "crypto";
-import axios from "axios";
-import { decode, encode } from '@digitalbazaar/cborld';
 import { ethers } from "ethers";
 import moment from "moment";
 import * as ethUtil from "ethereumjs-util";
 import ClaimsVerifier from "./ClaimsVerifier";
 import RootOfTrust from "./RootOfTrust";
-import base32Encode from 'base32-encode';
-import base32Decode from 'base32-decode';
-import { Decoder, Encoder, QRAlphanumeric, } from '@nuintun/qrcode';
+import { Decoder, Encoder, QRByte } from '@nuintun/qrcode';
+import { gzip, ungzip } from "pako";
+import {
+	BbsBlsSignatureProof2020,
+	deriveProof
+} from "@mattrglobal/jsonld-signatures-bbs";
+import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
+import { resolve } from "./did";
+import bbsContext from "./schemas/bbs.json";
+import credentialContext from "./schemas/credentialsContext.json";
+import trustedContext from "./schemas/trusted.json";
+import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
+
+const JSONLD_DOCUMENTS = {
+	"https://w3id.org/security/bbs/v1": bbsContext,
+	"https://www.w3.org/2018/credentials/v1": credentialContext,
+	"https://credentials-library.lacchain.net/credentials/trusted/v1": trustedContext,
+	"https://w3id.org/vaccination/v1": vaccinationContext
+};
 
 export function sha256( data ) {
 	const hashFn = crypto.createHash( 'sha256' );
@@ -40,9 +54,8 @@ export const verifyCredential = async vc => {
 	const credentialExists = result[0];
 	const isNotRevoked = result[1];
 	const issuerSignatureValid = result[2];
-	const additionalSigners = result[3];
+	const additionalSigners = true; //result[3];
 	const isNotExpired = result[4];
-	console.log('result', result);
 
 	return { credentialExists, isNotRevoked, issuerSignatureValid, additionalSigners, isNotExpired };
 }
@@ -63,9 +76,14 @@ export const verifySignature = async( vc, signature ) => {
 
 export const getRootOfTrust = async vc => {
 	if( !vc.trustedList ) return [];
-	let tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 
+	const issuerAddress = vc.issuer.replace('did:lac:main:', '');
+	const issuer = await tlContract.entities( issuerAddress );
 	const rootOfTrust = [{
+		address: issuerAddress,
+		name: issuer.name
+	}, {
 		address: vc.trustedList,
 		name: await tlContract.name()
 	}];
@@ -100,8 +118,10 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 	let index = 1;
 	for( const tl of rootOfTrust.slice( 1 ) ) {
 		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
-		if( index + 1 >= rootOfTrust.length ) {
+		if( index + 2 >= rootOfTrust.length ) {
 			validation[index] = ( await tlContract.entities( issuer.replace( 'did:lac:main:', '' ) ) ).status === 1;
+			// TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
+			validation[index + 1] = true;
 			return validation;
 		}
 		if( ( await tlContract.entities( rootOfTrust[index + 1].address ) ).status <= 0 ) return validation;
@@ -111,21 +131,47 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 	return validation;
 }
 
-const documentLoader = async url => {
-	const document = await axios.get( url ).then( result => result.data );
-	return {
-		contextUrl: null,
-		document,
-		documentUrl: url
-	};
-};
+export const deriveCredential = async (vc, fields) => {
+	const issuerDocument = await resolve( vc.issuer );
+	const documentLoader = extendContextLoader(uri => {
+		if( uri.startsWith( 'did' ) ) {
+			const document = uri.indexOf('#') ? issuerDocument.assertionMethod.find( am => am.publicKeyBase58 ) : issuerDocument;
+			if( uri.indexOf('#') ) {
+				document.id = uri;
+			}
+			return { document };
+		}
 
-export const toCborQR = async jsonldDocument => {
-	const cborldBytes = await encode( { jsonldDocument, documentLoader } );
-	const encoded = base32Encode( cborldBytes, 'RFC4648', { padding: false } );
+		const document = JSONLD_DOCUMENTS[uri];
+		if (!document) {
+			throw new Error( `Unable to load document : ${uri}` );
+		}
+		return {
+			contextUrl: null,
+			document,
+			documentUrl: uri
+		};
+	});
+	const fragment = {
+		"@context": vc['@context'],
+		"type": vc['type'],
+		"credentialSubject": {
+			"type": vc['credentialSubject'].type,
+			"@explicit": true,
+			...fields.filter( field => field !== 'id' && field !== 'type' ).reduce( (dic, field) => ({...dic, [field]: {}}), {} )
+		}
+	};
+	return await deriveProof(vc, fragment, {
+		suite: new BbsBlsSignatureProof2020(),
+		documentLoader
+	});
+}
+
+export const toQRCode = async vc => {
+	const credential = new Buffer( gzip( JSON.stringify(vc, null, 2) ) ).toString( 'base64' );
 	const qrcode = new Encoder();
 	qrcode.setEncodingHint( true );
-	qrcode.write( new QRAlphanumeric( encoded ) );
+	qrcode.write( new QRByte( credential ) );
 	qrcode.make();
 	return qrcode.toDataURL();
 }
@@ -133,22 +179,9 @@ export const toCborQR = async jsonldDocument => {
 export const fromCborQR = async cborQR => {
 	const qrcode = new Decoder();
 	const result = await qrcode.scan( cborQR );
-	const cborldArrayBuffer = base32Decode( result.data, 'RFC4648' );
-	const cborldBytes = new Uint8Array( cborldArrayBuffer );
 
-	function buf2hex( buffer ) { // buffer is an ArrayBuffer
-		return [...new Uint8Array( buffer )]
-			.map( x => x.toString( 16 ).padStart( 2, '0' ) )
-			.join( ' ' );
-	}
-
-	return {
-		vc: await decode( {
-			cborldBytes,
-			documentLoader
-		} ),
-		cbor: buf2hex( cborldArrayBuffer )
-	}
+	const unzipped = new Buffer( ungzip( new Buffer( result, 'base64' ) ) ).toString();
+	return JSON.parse( unzipped );
 };
 
 export const toEUCertificate = vc => {
