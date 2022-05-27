@@ -94,7 +94,7 @@ export function presentCredential( vc, user ) {
 	const hash = sha256( JSON.stringify( vc ) );
 	const signature = signCredential( `0x${hash}`, user.mainKeyPair.privateKey );
 
-	const vp = {
+	return {
 		"@context": [
 			"https://www.w3.org/2018/credentials/v1",
 		],
@@ -108,6 +108,4 @@ export function presentCredential( vc, user ) {
 			proofValue: signature
 		}]
 	};
-
-	return vp;
 }

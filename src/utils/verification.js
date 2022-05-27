@@ -135,7 +135,7 @@ export const deriveCredential = async (vc, fields) => {
 	const issuerDocument = await resolve( vc.issuer );
 	const documentLoader = extendContextLoader(uri => {
 		if( uri.startsWith( 'did' ) ) {
-			const document = uri.indexOf('#') ? issuerDocument.assertionMethod.find( am => am.publicKeyBase58 ) : issuerDocument;
+			const document = uri.indexOf('#') >= 0 ? issuerDocument.assertionMethod.find( am => am.publicKeyBase58 ) : issuerDocument;
 			if( uri.indexOf('#') ) {
 				document.id = uri;
 			}
@@ -169,6 +169,7 @@ export const deriveCredential = async (vc, fields) => {
 
 export const toQRCode = async vc => {
 	const credential = new Buffer( gzip( JSON.stringify(vc, null, 2) ) ).toString( 'base64' );
+	console.log('base64', credential);
 	const qrcode = new Encoder();
 	qrcode.setEncodingHint( true );
 	qrcode.write( new QRByte( credential ) );
