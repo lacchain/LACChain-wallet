@@ -17,12 +17,14 @@ import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
 import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
+import educationContext from "./schemas/education.json";
 
 const JSONLD_DOCUMENTS = {
 	"https://w3id.org/security/bbs/v1": bbsContext,
 	"https://www.w3.org/2018/credentials/v1": credentialContext,
 	"https://credentials-library.lacchain.net/credentials/trusted/v1": trustedContext,
-	"https://w3id.org/vaccination/v1": vaccinationContext
+	"https://w3id.org/vaccination/v1": vaccinationContext,
+	"https://credentials-library.lacchain.net/credentials/education/v1": educationContext
 };
 
 export function sha256( data ) {

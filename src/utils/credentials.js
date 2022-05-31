@@ -50,7 +50,6 @@ function signCredential( credentialHash, issuerPrivateKey ) {
 }
 
 export async function syncCredentials( user, update ) {
-	console.log( 'syncing' );
 	const credentials = user.credentials || [];
 	const vcs = (await fetchVC( user )).map( vc => JSON.parse( vc.message ) );
 	user.credentials = credentials.concat( vcs.reduce( ( a, i ) => {

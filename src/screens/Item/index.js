@@ -128,6 +128,7 @@ const Item = ( { match } ) => {
 										{ "category-vc-id": ct === 'IdentityCard' },
 										{ "category-vc-trusted": ct === 'TrustedCredential' },
 										{ "category-vc-health": ct === 'VaccinationCertificate' },
+										{ "category-vc-academy": ct === 'EducationCertificate' },
 										{ "category-erc20": ct === 'ERC-20' || ct === 'ERC20' },
 										{ "category-erc721": ct === 'ERC-721' },
 										{ "category-tokenized": ct === 'TokenizedMoney' },
