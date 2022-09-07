@@ -2,14 +2,12 @@ import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./Item.module.sass";
 import Proofs from "./Proofs";
-import Claims from "./Claims";
 import Options from "./Options";
 import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
 	getRootOfTrust,
-	toEUCertificate,
 	verifyCredential,
 	verifyRootOfTrust,
 	verifySignature
@@ -20,7 +18,7 @@ import { getBalance as getERC20Balance } from "../../utils/erc20";
 import { getBalance as getNFTBalance } from "../../utils/erc721";
 import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
 
-const navLinks = ["Claims", "Proofs", "Root of Trust", "Raw", "EU"];
+const navLinks = ["Proofs", "Root of Trust", "Raw"];
 
 const keyType = {
 	'EcdsaSecp256k1Signature2019': 'Ethereum SECP256K Signature',
@@ -92,6 +90,7 @@ const Item = ( { match } ) => {
 		}
 	}, [] );
 
+	const image = `/pdf/${credential.id.replace( 'urn:uuid:', '' )}.png`
 	return (
 		<>
 			<div>
@@ -99,22 +98,17 @@ const Item = ( { match } ) => {
 					<div className={styles.card_wrapper}>
 						<div className={styles.card}>
 							<div className={styles.preview}>
-								<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
-								<div className={styles.control}>
-									<div className={styles.topLeft}>{type.topLeft( credential )}</div>
-									<div className={styles.topRight}>{type.topRight( { ...credential, balance } )}</div>
-									<div className={styles.title}>{type.claim( credential )}</div>
-									{type.icon(credential) && <div className={styles.image}>{type.icon(credential)}</div> }
-									<div className={styles.claim}>{type.title}</div>
-									<div className={styles.bottom}>{type.bottom( credential )}</div>
-								</div>
+								<a href={image.replace('png', 'pdf')} target="_blank" rel="noreferrer">
+									<img srcSet={`${image} 2x`} src={image} alt="Card"/>
+								</a>
 							</div>
 						</div>
 						{type.kind === 'token' && type.title === 'NFT Token' && balance === 0 ? <></> :
 						<Options className={styles.options} item={credential} type={type}/> }
 					</div>
 					<div className={styles.details}>
-						<h1 className={cn( "h5", styles.title2 )}>{type.kind === 'vc' ? type.title : type.claim( credential )}</h1>
+						<h1 className={cn( "h5", styles.title2 )}>{type.claim( credential )}</h1>
+						{type.topRight( { ...credential, balance } )}<hr />
 						<div className={styles.cost}>
 							<div className={styles.categories}>
 								{type.kind === 'token' &&
@@ -160,19 +154,13 @@ const Item = ( { match } ) => {
 									) )}
 								</div>
 								{activeIndex === 0 &&
-								<Claims className={styles.users} claims={credential.credentialSubject}/>
-								}
-								{activeIndex === 1 &&
 								<Proofs className={styles.users} items={proofs}/>
 								}
-								{activeIndex === 2 &&
+								{activeIndex === 1 &&
 								<RootOfTrust className={styles.users} items={rootOfTrust} loading={verifying}/>
 								}
-								{activeIndex === 3 &&
+								{activeIndex === 2 &&
 								<Raw className={styles.users} credential={credential}/>
-								}
-								{activeIndex === 4 &&
-								<Raw className={styles.users} credential={toEUCertificate( credential )}/>
 								}
 							</> :
 							<>

@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./Header.module.sass";
-import Icon from "../Icon";
 import Image from "../Image";
-import Notification from "./Notification";
 import User from "./User";
 import { useAuthContext } from "../../contexts/authContext";
 
@@ -12,22 +10,12 @@ const nav = [
   {
     url: "/",
     title: "Credentials",
-  },
-  {
-    url: "/verification",
-    title: "Verification",
   }
 ];
 
 const Headers = () => {
   const [visibleNav, setVisibleNav] = useState(false);
-  const [search, setSearch] = useState("");
-
   const { user } = useAuthContext();
-
-  const handleSubmit = (e) => {
-    alert();
-  };
 
   return (
     <header className={styles.header}>
@@ -73,12 +61,6 @@ const Headers = () => {
             </button>
           </form>
           */}
-          <Link
-            className={cn("button-small", styles.button)}
-            to="/upload-variants"
-          >
-            Upload
-          </Link>
         </div>
         {/*<Notification className={styles.notification} />*/}
         {/* <Link

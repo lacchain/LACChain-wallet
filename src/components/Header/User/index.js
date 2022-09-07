@@ -15,33 +15,11 @@ import { formatDID, formatUser } from "../../../utils/format";
 const User = ({ className }) => {
   const [visibleAddToken, setVisibleAddToken] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [syncing, setSyncing] = useState( false );
-  const { account, user, update } = useAuthContext();
+  const [syncing] = useState( false );
+  const { account, user } = useAuthContext();
   const displayAccount = account ? `${account.substring( 0, 7 )} ... ${account.substring( 37 )}` : '';
 
   const items = [
-    {
-      title: "Profile",
-      icon: "user",
-      url: "/profile",
-    },
-    {
-      title: "Sync",
-      icon: "lightning",
-      action: async () => {
-        setSyncing( true );
-        syncCredentials( user, update ).then( () => {
-          setSyncing( false );
-        } ).catch( () => {
-          setSyncing( false );
-        } );
-      },
-    },
-    {
-      title: "Add Token",
-      icon: "plus-circle",
-      action: () => setVisibleAddToken( true ),
-    },
     {
       title: "Dark theme",
       icon: "bulb",

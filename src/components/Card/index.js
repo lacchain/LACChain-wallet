@@ -41,11 +41,13 @@ const Card = ( { className, item, onRemove } ) => {
 	/*if( type.kind === 'vc' ){
 		console.log( item );
 	}*/
+	let image = type.image2x;
+	if( type.claim( item ) === 'Yellow fever (J07BL01)' ) image = '/images/cards/vc-token-nft.png'
 	return (
 		<div className={cn( styles.card, className )}>
 			<Link className={styles.link} to={`/item/${item.id}`}>
 				<div className={styles.preview}>
-					<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
+					<img srcSet={`${image} 2x`} src={image} alt="Card"/>
 					<div className={styles.control}>
 						<Link to="#" className={styles.close} onClick={onRemove}>
 							<Icon name="close" size="14"/>
