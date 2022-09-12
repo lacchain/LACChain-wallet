@@ -131,8 +131,8 @@ export const types = {
 		title: "Tuberculosis test result",
 		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
 		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
-		claim: () => `Maria Delgado`,
-		bottom: () => `Issuer: OMS`,
+		claim: () => `Tuberculosis test result`,
+		bottom: () => `Issuer did:lac:main:0x2cde6 ... 05ddba2`,
 		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
 		description: "-",
 		image: "/images/cards/vc-token-tm.png",
@@ -143,8 +143,8 @@ export const types = {
 		title: "Hepatitis B test result",
 		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
 		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
-		claim: () => `Pedro Hernandez`,
-		bottom: () => `Issuer: OMS`,
+		claim: () => `Hepatitis B test result`,
+		bottom: () => `Issuer did:lac:main:0x2cde6 ... 05ddba2`,
 		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
 		description: "-",
 		image: "/images/cards/vc-academy.png",
@@ -152,15 +152,27 @@ export const types = {
 	},
 	'history://medical': {
 		kind: 'vc',
-		title: "Digital Health Summary History",
+		title: "Digital Health Summary",
 		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
 		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
-		claim: () => `Rafael Quintana`,
-		bottom: () => `Issuer: OMS`,
+		claim: () => `Digital Health Summary`,
+		bottom: () => `Issuer did:lac:main:0x2cde6 ... 05ddba2`,
 		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
 		description: "-",
 		image: "/images/cards/vc-token-erc20.png",
 		image2x: "/images/cards/vc-token-erc20.png"
+	},
+	'inmuno://inmunization': {
+		kind: 'vc',
+		title: "My Immunization Records",
+		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
+		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
+		claim: () => `My Immunization Records`,
+		bottom: () => `Issuer did:lac:main:0x2cde6 ... 05ddba2`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "-",
+		image: "/images/cards/vc-id.png",
+		image2x: "/images/cards/vc-id.png"
 	}
 };
 

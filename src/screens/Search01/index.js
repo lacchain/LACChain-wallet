@@ -15,8 +15,11 @@ const navLinks = [{
 	label: "All",
 	context: '*'
 }, {
-	label: "My Immunization Records",
+	label: "Vaccination Certificates",
 	context: 'https://'
+}, {
+	label: "My Immunization Records",
+	context: 'inmuno://'
 }, {
 	label: "Tuberculosis test result",
 	context: 'tuber://'
@@ -24,7 +27,7 @@ const navLinks = [{
 	label: "Hepatitis B test result",
 	context: 'hepa://'
 }, {
-	label: "Digital Health Summary History",
+	label: "Digital Health Summary",
 	context: 'hist://'
 }];
 
