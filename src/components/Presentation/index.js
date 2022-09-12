@@ -29,7 +29,8 @@ const Presentation = ( { className, credential } ) => {
 			<div className={styles.btns}>
                 {!qr && <button className={cn( "button-pink", styles.button )} onClick={() => {
 									let claims = claimNames;
-									if( hidePersonalData ) delete claims.recipient;
+									if( hidePersonalData ) claims = ["id", "type", "batchNumber", "administeringCentre", "healthProfessional", "countryOfVaccination", "order", "vaccine"];
+									console.log(claims);
 									deriveCredential( credential, claims ).then( async zkp => {
 										const vp = presentCredential( zkp, user );
 										const qr = await toQRCode( vp );
