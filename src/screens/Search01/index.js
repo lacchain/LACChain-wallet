@@ -15,14 +15,17 @@ const navLinks = [{
 	label: "All",
 	context: '*'
 }, {
-	label: "Credentials",
+	label: "My Immunization Records",
 	context: 'https://'
 }, {
-	label: "Tokens",
-	context: 'token://'
+	label: "Tuberculosis test result",
+	context: 'tuber://'
 }, {
-	label: "Other",
-	context: 'other://'
+	label: "Hepatitis B test result",
+	context: 'hepa://'
+}, {
+	label: "Digital Health Summary History",
+	context: 'hist://'
 }];
 
 const dateOptions = ["Newest", "Oldest"];

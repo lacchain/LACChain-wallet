@@ -123,7 +123,7 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 		if( index + 2 >= rootOfTrust.length ) {
 			validation[index] = ( await tlContract.entities( issuer.replace( 'did:lac:main:', '' ) ) ).status === 1;
 			// TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
-			validation[index + 1] = true;
+			validation[index + 1] = false;
 			return validation;
 		}
 		if( ( await tlContract.entities( rootOfTrust[index + 1].address ) ).status <= 0 ) return validation;

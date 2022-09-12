@@ -125,6 +125,42 @@ export const types = {
 		description: "This is an ERC-20 TokenizedMoney",
 		image: "/images/cards/vc-token-tm.png",
 		image2x: "/images/cards/vc-token-tm.png"
+	},
+	'tuber://tuberculosis': {
+		kind: 'vc',
+		title: "Tuberculosis test result",
+		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
+		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
+		claim: () => `Maria Delgado`,
+		bottom: () => `Issuer: OMS`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "-",
+		image: "/images/cards/vc-token-tm.png",
+		image2x: "/images/cards/vc-token-tm.png"
+	},
+	'hepa://hepatitis': {
+		kind: 'vc',
+		title: "Hepatitis B test result",
+		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
+		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
+		claim: () => `Pedro Hernandez`,
+		bottom: () => `Issuer: OMS`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "-",
+		image: "/images/cards/vc-academy.png",
+		image2x: "/images/cards/vc-academy.png"
+	},
+	'history://medical': {
+		kind: 'vc',
+		title: "Digital Health Summary History",
+		topLeft: () => `Issued ${moment().format( 'DD/MM/YYYY' )}`,
+		topRight: () => `Expires ${moment().format( 'DD/MM/YYYY' )}`,
+		claim: () => `Rafael Quintana`,
+		bottom: () => `Issuer: OMS`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "-",
+		image: "/images/cards/vc-token-erc20.png",
+		image2x: "/images/cards/vc-token-erc20.png"
 	}
 };
 

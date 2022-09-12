@@ -43,9 +43,13 @@ const Card = ( { className, item, onRemove } ) => {
 	}*/
 	let image = type.image2x;
 	if( type.claim( item ) === 'Yellow fever (J07BL01)' ) image = '/images/cards/vc-token-nft.png'
+	let url = `/item/${item.id}`;
+	if( type.title === 'Tuberculosis test result' ||
+			type.title === 'Hepatitis B test result' ||
+			type.title === 'Digital Health Summary History' ) url = '#';
 	return (
 		<div className={cn( styles.card, className )}>
-			<Link className={styles.link} to={`/item/${item.id}`}>
+			<Link className={styles.link} to={url}>
 				<div className={styles.preview}>
 					<img srcSet={`${image} 2x`} src={image} alt="Card"/>
 					<div className={styles.control}>

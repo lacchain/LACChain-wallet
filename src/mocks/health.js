@@ -135,7 +135,7 @@ export default {
         }
       ]
     },
-    {
+    /*{
       "@context":[
         "https://www.w3.org/2018/credentials/v1",
         "https://credentials-library.lacchain.net/credentials/trusted/v1",
@@ -269,6 +269,180 @@ export default {
         "VaccinationCertificate"
       ],
       "id":"urn:uuid:321f6db2-ebcc-4c73-8a95-a30a0439064d",
+      "name":"Yellow fever",
+      "issuer":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2",
+      "issuanceDate":"2022-09-06T23:23:48.001Z",
+      "expirationDate":"2022-09-30T23:23:44.460Z",
+      "trustedList":"0x8ed6256Ff89d1710dFD06D08708535aD6D1B120E",
+      "credentialSubject":{
+        "id":"did:lac:main:0xaaee592add5bb58ba7c49aabb08124feb9fefcc4",
+        "type":"VaccinationEvent",
+        "batchNumber":"Y73737",
+        "administeringCentre":"Centro de Vacunacion de Coatepeque",
+        "healthProfessional":"Centro de Vacunacion de Coatepeque",
+        "countryOfVaccination":"El Salvador",
+        "order":"2",
+        "recipient":{
+          "type":"VaccineRecipient",
+          "givenName":"Paola",
+          "familyName":"Gonzalez",
+          "gender":"female",
+          "birthDate":"24-10-2000"
+        },
+        "vaccine":{
+          "type":"Vaccine",
+          "disease":"Yellow fever",
+          "atcCode":"J07BL01"
+        }
+      },
+      "credentialStatus":{
+        "id":"0x82F1f28e4EA6F8F41e7720853a2D2DD127c317E9",
+        "type":"SmartContract"
+      },
+      "credentialHash":"0x8e239257c47b09739b2289c795bcafea9d59167c0042366bb3ec9eb5b9344cef",
+      "proof":[
+        {
+          "type":"EcdsaSecp256k1Signature2019",
+          "created":"2022-09-06T23:23:49.900Z",
+          "proofPurpose":"assertionMethod",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-0",
+          "domain":"0xB75951ca8dc29841e4d82d7e40867A745E62867b",
+          "proofValue":"0x5581e6bb7ba350448ef5593fa1da635c7e0240a3024ef6321a1f5341cead347c34b641169c772c923e7b65461dc852f3b24e4d499f4f9e08ec07c91c2a5f42361c"
+        },
+        {
+          "type":"BbsBlsSignature2020",
+          "created":"2022-09-06T23:23:51Z",
+          "proofPurpose":"assertionMethod",
+          "proofValue":"j+jR/Z9qT475ScvysyF8OHMkD8ekW4asZXwnViCfr6fFvGVxTL8B8C7ZM7+dWwSYH0E5BwfWCFwxQxOoTo9D6CiJhE4hbPljqQHeqEAmN5dCdTM+aJ5bkH7C25+90SdnFDXk7axtKAd2fWkqtaPpXw==",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-3"
+        }
+      ]
+    },*/
+    {
+      "@context":[
+        "tuber://tuberculosis",
+      ],
+      "type":[
+        "VerifiableCredential",
+        "VaccinationCertificate"
+      ],
+      "id":"urn:uuid:321f6db2-ebcc-4c73-8a95-a30a0439064f",
+      "name":"Yellow fever",
+      "issuer":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2",
+      "issuanceDate":"2022-09-06T23:23:48.001Z",
+      "expirationDate":"2022-09-30T23:23:44.460Z",
+      "trustedList":"0x8ed6256Ff89d1710dFD06D08708535aD6D1B120E",
+      "credentialSubject":{
+        "id":"did:lac:main:0xaaee592add5bb58ba7c49aabb08124feb9fefcc4",
+        "type":"VaccinationEvent",
+        "batchNumber":"Y73737",
+        "administeringCentre":"Centro de Vacunacion de Coatepeque",
+        "healthProfessional":"Centro de Vacunacion de Coatepeque",
+        "countryOfVaccination":"El Salvador",
+        "order":"2",
+        "recipient":{
+          "type":"VaccineRecipient",
+          "givenName":"Paola",
+          "familyName":"Gonzalez",
+          "gender":"female",
+          "birthDate":"24-10-2000"
+        },
+        "vaccine":{
+          "type":"Vaccine",
+          "disease":"Yellow fever",
+          "atcCode":"J07BL01"
+        }
+      },
+      "credentialStatus":{
+        "id":"0x82F1f28e4EA6F8F41e7720853a2D2DD127c317E9",
+        "type":"SmartContract"
+      },
+      "credentialHash":"0x8e239257c47b09739b2289c795bcafea9d59167c0042366bb3ec9eb5b9344cef",
+      "proof":[
+        {
+          "type":"EcdsaSecp256k1Signature2019",
+          "created":"2022-09-06T23:23:49.900Z",
+          "proofPurpose":"assertionMethod",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-0",
+          "domain":"0xB75951ca8dc29841e4d82d7e40867A745E62867b",
+          "proofValue":"0x5581e6bb7ba350448ef5593fa1da635c7e0240a3024ef6321a1f5341cead347c34b641169c772c923e7b65461dc852f3b24e4d499f4f9e08ec07c91c2a5f42361c"
+        },
+        {
+          "type":"BbsBlsSignature2020",
+          "created":"2022-09-06T23:23:51Z",
+          "proofPurpose":"assertionMethod",
+          "proofValue":"j+jR/Z9qT475ScvysyF8OHMkD8ekW4asZXwnViCfr6fFvGVxTL8B8C7ZM7+dWwSYH0E5BwfWCFwxQxOoTo9D6CiJhE4hbPljqQHeqEAmN5dCdTM+aJ5bkH7C25+90SdnFDXk7axtKAd2fWkqtaPpXw==",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-3"
+        }
+      ]
+    },
+    {
+      "@context":[
+        "hepa://hepatitis",
+      ],
+      "type":[
+        "VerifiableCredential",
+        "VaccinationCertificate"
+      ],
+      "id":"urn:uuid:321f6db2-ebcc-4c73-8a95-a30a0439064z",
+      "name":"Yellow fever",
+      "issuer":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2",
+      "issuanceDate":"2022-09-06T23:23:48.001Z",
+      "expirationDate":"2022-09-30T23:23:44.460Z",
+      "trustedList":"0x8ed6256Ff89d1710dFD06D08708535aD6D1B120E",
+      "credentialSubject":{
+        "id":"did:lac:main:0xaaee592add5bb58ba7c49aabb08124feb9fefcc4",
+        "type":"VaccinationEvent",
+        "batchNumber":"Y73737",
+        "administeringCentre":"Centro de Vacunacion de Coatepeque",
+        "healthProfessional":"Centro de Vacunacion de Coatepeque",
+        "countryOfVaccination":"El Salvador",
+        "order":"2",
+        "recipient":{
+          "type":"VaccineRecipient",
+          "givenName":"Paola",
+          "familyName":"Gonzalez",
+          "gender":"female",
+          "birthDate":"24-10-2000"
+        },
+        "vaccine":{
+          "type":"Vaccine",
+          "disease":"Yellow fever",
+          "atcCode":"J07BL01"
+        }
+      },
+      "credentialStatus":{
+        "id":"0x82F1f28e4EA6F8F41e7720853a2D2DD127c317E9",
+        "type":"SmartContract"
+      },
+      "credentialHash":"0x8e239257c47b09739b2289c795bcafea9d59167c0042366bb3ec9eb5b9344cef",
+      "proof":[
+        {
+          "type":"EcdsaSecp256k1Signature2019",
+          "created":"2022-09-06T23:23:49.900Z",
+          "proofPurpose":"assertionMethod",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-0",
+          "domain":"0xB75951ca8dc29841e4d82d7e40867A745E62867b",
+          "proofValue":"0x5581e6bb7ba350448ef5593fa1da635c7e0240a3024ef6321a1f5341cead347c34b641169c772c923e7b65461dc852f3b24e4d499f4f9e08ec07c91c2a5f42361c"
+        },
+        {
+          "type":"BbsBlsSignature2020",
+          "created":"2022-09-06T23:23:51Z",
+          "proofPurpose":"assertionMethod",
+          "proofValue":"j+jR/Z9qT475ScvysyF8OHMkD8ekW4asZXwnViCfr6fFvGVxTL8B8C7ZM7+dWwSYH0E5BwfWCFwxQxOoTo9D6CiJhE4hbPljqQHeqEAmN5dCdTM+aJ5bkH7C25+90SdnFDXk7axtKAd2fWkqtaPpXw==",
+          "verificationMethod":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2#vm-3"
+        }
+      ]
+    },
+    {
+      "@context":[
+        "history://medical",
+      ],
+      "type":[
+        "VerifiableCredential",
+        "VaccinationCertificate"
+      ],
+      "id":"urn:uuid:321f6db2-ebcc-4c73-8a95-a30a0439064w",
       "name":"Yellow fever",
       "issuer":"did:lac:main:0x2cde6f4010b569f79cdb4346aa82be3d605ddba2",
       "issuanceDate":"2022-09-06T23:23:48.001Z",
