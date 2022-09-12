@@ -28,14 +28,19 @@ const Presentation = ( { className, credential } ) => {
 			</div>
 			<div className={styles.btns}>
                 {!qr && <button className={cn( "button-pink", styles.button )} onClick={() => {
-									let claims = claimNames;
-									if( hidePersonalData ) claims = ["id", "type", "batchNumber", "administeringCentre", "healthProfessional", "countryOfVaccination", "order", "vaccine"];
-									console.log(claims);
-									deriveCredential( credential, claims ).then( async zkp => {
-										const vp = presentCredential( zkp, user );
-										const qr = await toQRCode( vp );
-										setQRCode( qr );
-									} );
+									if( hidePersonalData ) {
+										const claims = ["id", "type", "batchNumber", "administeringCentre", "healthProfessional", "countryOfVaccination", "order", "vaccine"];
+										deriveCredential( credential, claims ).then( async zkp => {
+											const vp = presentCredential( zkp, user );
+											const qr = await toQRCode( vp );
+											setQRCode( qr );
+										} );
+									} else {
+										toQRCode( credential ).then( qr => {
+											setQRCode( qr );
+										} );
+
+									}
                 }}>Continue</button> }
 			</div>
 		</div>
