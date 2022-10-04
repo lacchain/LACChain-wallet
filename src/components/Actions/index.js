@@ -15,7 +15,7 @@ import {
 import CredentialVerfication from "../../screens/Item/Control/CredentialVerfication";
 import Presentation from "../Presentation";
 
-const Actions = ( { className, item } ) => {
+const Actions = ( { className, item, attachment } ) => {
 	const [visible, setVisible] = useState( false );
 	const [visibleModalTransfer, setVisibleModalTransfer] = useState( false );
 	const [visibleModalRemoveSale, setVisibleModalRemoveSale] = useState( false );
@@ -63,6 +63,19 @@ const Actions = ( { className, item } ) => {
 		title: "Create Presentation",
 		icon: "edit",
 		action: () => setVisibleModalBurn( true ),
+	});
+
+	if( attachment ) items.push({
+		title: "Download Attachment",
+		icon: "more",
+		action: () => {
+			const url = "data:application/pdf;base64," + attachment
+			const link = document.createElement( 'a' );
+			link.href = url;
+			link.setAttribute( 'download', 'attachment.pdf' );
+			document.body.appendChild( link );
+			link.click();
+		},
 	});
 
 	return (

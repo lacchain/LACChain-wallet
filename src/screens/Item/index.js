@@ -51,7 +51,9 @@ const Item = ( { match } ) => {
 	const [verifying, setIsVerifying] = useState( true );
 	const [balance, setBalance] = useState( 0 );
 	const [rootOfTrust, setRootOfTrust] = useState( [] );
-	const credential = user.credentials.find( c => c.id === match.params.id );
+	const item = user.credentials.find( c => c.id === match.params.id );
+	const credential = item.type === 'VerifiablePresentation' ? item.verifiableCredential[0] : item;
+	const attachment = item.type === 'VerifiablePresentation' ? item.attachment : null;
 	const context = credential['@context'];
 	const type = ( !Array.isArray( context ) ? types[context] : types[context[context.length - 1]] ) || types['https://www.w3.org/2018/credentials/v1'];
 	const [proofs, setProofs] = useState( [] );
@@ -111,7 +113,7 @@ const Item = ( { match } ) => {
 							</div>
 						</div>
 						{type.kind === 'token' && type.title === 'NFT Token' && balance === 0 ? <></> :
-						<Options className={styles.options} item={credential} type={type}/> }
+						<Options className={styles.options} item={credential} type={type} attachment={attachment} /> }
 					</div>
 					<div className={styles.details}>
 						<h1 className={cn( "h5", styles.title2 )}>{type.kind === 'vc' ? type.title : type.claim( credential )}</h1>

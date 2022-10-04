@@ -11,8 +11,9 @@ import { getBalance as getNFTBalance } from "../../utils/erc721";
 
 const Card = ( { className, item, onRemove } ) => {
 	const { user } = useAuthContext();
+	const credential = item.type === 'VerifiablePresentation' ? item.verifiableCredential[0] : item;
 
-	const context = item['@context'];
+	const context = credential['@context'];
 	const type = ( !Array.isArray(context) ? types[context] : types[context[context.length - 1]] ) ||
 		types['https://www.w3.org/2018/credentials/v1'];
 
@@ -22,40 +23,40 @@ const Card = ( { className, item, onRemove } ) => {
 		if( type.kind === 'token' ) {
 			switch( type.title ){
 				case 'ERC-20 Token':
-					getBalance( item.address, user.did.replace('did:lac:main:', '') )
+					getBalance( credential.address, user.did.replace('did:lac:main:', '') )
 						.then( balance => {
-							const amount = balance.toNumber() / 10**item.decimals;
+							const amount = balance.toNumber() / 10**credential.decimals;
 							setBalance( amount );
 						} );
 					break;
 				case 'NFT Token':
-					getNFTBalance( item.address, user.did.replace('did:lac:main:', ''), item.tokenId )
+					getNFTBalance( credential.address, user.did.replace('did:lac:main:', ''), credential.tokenId )
 						.then( balance => setBalance( balance ) );
 					break;
 				case 'Tokenized Money':
-					getTokenizedBalance( item.address ).then( balance => setBalance( balance ) );
+					getTokenizedBalance( credential.address ).then( balance => setBalance( balance ) );
 			}
 
 		}
 	}, [] );
 	/*if( type.kind === 'vc' ){
-		console.log( item );
+		console.log( credential );
 	}*/
 	return (
 		<div className={cn( styles.card, className )}>
-			<Link className={styles.link} to={`/item/${item.id}`}>
+			<Link className={styles.link} to={`/item/${credential.id}`}>
 				<div className={styles.preview}>
 					<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
 					<div className={styles.control}>
 						<Link to="#" className={styles.close} onClick={onRemove}>
 							<Icon name="close" size="14"/>
 						</Link>
-						<div className={styles.topLeft}>{type.topLeft( item )}</div>
-						<div className={styles.topRight}>{type.topRight( {...item, balance} )}</div>
-						<div className={styles.title}>{type.claim( item )}</div>
-						{type.icon(item) && <div className={styles.image}>{type.icon(item)}</div> }
+						<div className={styles.topLeft}>{type.topLeft( credential )}</div>
+						<div className={styles.topRight}>{type.topRight( {...credential, balance} )}</div>
+						<div className={styles.title}>{type.claim( credential )}</div>
+						{type.icon(credential) && <div className={styles.image}>{type.icon(credential)}</div> }
 						<div className={styles.claim}>{type.title}</div>
-						<div className={styles.bottom}>{type.bottom( item )}</div>
+						<div className={styles.bottom}>{type.bottom( credential )}</div>
 					</div>
 				</div>
 			</Link>
