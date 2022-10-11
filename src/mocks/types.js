@@ -54,6 +54,19 @@ export const types = {
 		image: "/images/cards/vc-academy.png",
 		image2x: "/images/cards/vc-academy.png"
 	},
+	'https://credentials-library.lacchain.net/credentials/education/redclara/diploma/v1': {
+		kind: 'vc',
+		title: "Education Certificate",
+		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
+		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
+		claim: ( { credentialSubject } ) => `${credentialSubject.attendant.givenName} ${credentialSubject.attendant.familyName}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 20 )} ... ${issuer.substring( 48 )}`,
+		icon: () => <FontAwesomeIcon icon={faSchool} size="2x" />,
+		description: "Example of Verifiable Credential for Education Certificate",
+		signatures: 3,
+		image: "/images/cards/vc-academy.png",
+		image2x: "/images/cards/vc-academy.png"
+	},
 	'https://credentials-library.lacchain.net/credentials/identity/v1': {
 		kind: 'vc',
 		title: "LACChain ID Credential",

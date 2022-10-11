@@ -15,6 +15,7 @@ export async function fetchVC( user ) {
 
 	const result = await axios.get( 'https://mailbox.lacchain.net/vc', { headers: { token } } );
 	const credentials = await Promise.all( result.data.map( vc => didCommService.decrypt( vc, user.encryptionKeyPair ) ) );
+	console.log(credentials.map( c => JSON.parse(c.message) ));
 	return credentials.filter( c => c.message );
 }
 
