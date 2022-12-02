@@ -34,6 +34,7 @@ export function sha256( data ) {
 }
 
 export const verifyCredential = async vc => {
+	if( !vc.proof ) return { credentialExists: true, isNotRevoked: true, issuerSignatureValid: true, additionalSigners: true, isNotExpired: true };
 	if( !vc.proof[0].domain ) return {
 		credentialExists: false,
 		isNotRevoked: false,
@@ -111,8 +112,8 @@ export const getRootOfTrust = async vc => {
 }
 
 export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
-	if( rootOfTrust[0].address === '0x5672778D37604b365289c9CcA4dE0aE28365E2Ad' ) return new Array(rootOfTrust.length).fill(true);
 	if( rootOfTrust.length <= 0 ) return [];
+	if( rootOfTrust[0].address === '0x5672778D37604b365289c9CcA4dE0aE28365E2Ad' ) return new Array(rootOfTrust.length).fill(true);
 	const validation = ( new Array( rootOfTrust.length ) ).fill( false );
 	const root = new ethers.Contract( rootOfTrust[0].address, RootOfTrust.pkd, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 	if( ( await root.publicKeys( rootOfTrust[1].address ) ).status <= 0 ) return validation;
@@ -175,7 +176,16 @@ export const toQRCode = async vc => {
 	console.log('base64', credential);
 	const qrcode = new Encoder();
 	qrcode.setEncodingHint( true );
-	qrcode.write( new QRByte( credential ) );
+	if( vc.hash ){
+		qrcode.write( new QRByte( JSON.stringify({
+			hash: vc.hash,
+			issuanceDate: vc.issuanceDate,
+			expirationDate: vc.expirationDate,
+			subject: vc.credentialSubject.recipient
+		}) ) );
+	} else {
+		qrcode.write( new QRByte( credential ) );
+	}
 	qrcode.make();
 	return qrcode.toDataURL();
 }

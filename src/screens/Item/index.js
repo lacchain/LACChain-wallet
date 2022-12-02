@@ -30,7 +30,7 @@ const keyType = {
 async function verifyFullCredential( credential ) {
 	const proofs = [];
 	const verification = await verifyCredential( credential );
-	for( const proof of credential.proof ) {
+	for( const proof of (credential.proof || []) ) {
 		const vm = proof.verificationMethod;
 		const did = vm.substring( 0, vm.indexOf('#') );
 		proofs.push( {

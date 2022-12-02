@@ -59,7 +59,7 @@ const Actions = ( { className, item, attachment } ) => {
 		},
 	];
 
-	if( item.proof.find( p => p.type === 'BbsBlsSignature2020' ) ) items.push({
+	if( item.proof?.find( p => p.type === 'BbsBlsSignature2020' ) ) items.push({
 		title: "Create Presentation",
 		icon: "edit",
 		action: () => setVisibleModalBurn( true ),
