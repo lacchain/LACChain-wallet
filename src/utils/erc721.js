@@ -38,5 +38,5 @@ export async function getBalance( address, account, tokenId ) {
 
 export async function sendTokens( address, from, privateKey, receiver, tokenId ) {
 	const token = new ethers.Contract( address, abi, new ethers.Wallet( privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
-	return await token.transferFrom( from.replace('did:lac:main:', ''), receiver.replace('did:lac:main:', ''), tokenId );
+	return await token.transferFrom( from.replace(/(?<=:)[^:]+$/, ''), receiver.replace(/(?<=:)[^:]+$/, ''), tokenId );
 }

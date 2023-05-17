@@ -23,14 +23,14 @@ const Card = ( { className, item, onRemove } ) => {
 		if( type.kind === 'token' ) {
 			switch( type.title ){
 				case 'ERC-20 Token':
-					getBalance( credential.address, user.did.replace('did:lac:main:', '') )
+					getBalance( credential.address, user.did.replace(/(?<=:)[^:]+$/, '') )
 						.then( balance => {
 							const amount = balance.toNumber() / 10**credential.decimals;
 							setBalance( amount );
 						} );
 					break;
 				case 'NFT Token':
-					getNFTBalance( credential.address, user.did.replace('did:lac:main:', ''), credential.tokenId )
+					getNFTBalance( credential.address, user.did.replace(/(?<=:)[^:]+$/, ''), credential.tokenId )
 						.then( balance => setBalance( balance ) );
 					break;
 				case 'Tokenized Money':

@@ -47,8 +47,8 @@ export const verifyCredential = async vc => {
 	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 	const rsv = ethUtil.fromRpcSig( vc.proof[0].proofValue );
 	const result = await contract.verifyCredential( [
-		vc.issuer.replace( 'did:lac:main:', '' ),
-		vc.credentialSubject.id.replace( 'did:lac:main:', '' ),
+		vc.issuer.replace( /(?<=:)[^:]+$/, '' ),
+		vc.credentialSubject.id.replace( /(?<=:)[^:]+$/, '' ),
 		data,
 		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
 		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )
@@ -69,8 +69,8 @@ export const verifySignature = async( vc, signature ) => {
 	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 
 	return await contract.verifySigner( [
-		vc.issuer.replace( 'did:lac:main:', '' ),
-		vc.credentialSubject.id.replace( 'did:lac:main:', '' ),
+		vc.issuer.replace( /(?<=:)[^:]+$/, '' ),
+		vc.credentialSubject.id.replace( /(?<=:)[^:]+$/, '' ),
 		data,
 		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
 		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )
@@ -81,7 +81,7 @@ export const getRootOfTrust = async vc => {
 	if( !vc.trustedList ) return [];
 	const tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 
-	const issuerAddress = vc.issuer.replace('did:lac:main:', '');
+	const issuerAddress = vc.issuer.replace(/(?<=:)[^:]+$/, '');
 	const issuer = await tlContract.entities( issuerAddress );
 	const rootOfTrust = [{
 		address: issuerAddress,
@@ -123,7 +123,7 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 	for( const tl of rootOfTrust.slice( 1 ) ) {
 		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
 		if( index + 2 >= rootOfTrust.length ) {
-			validation[index] = ( await tlContract.entities( issuer.replace( 'did:lac:main:', '' ) ) ).status === 1;
+			validation[index] = ( await tlContract.entities( issuer.replace( /(?<=:)[^:]+$/, '' ) ) ).status === 1;
 			// TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
 			validation[index + 1] = true;
 			return validation;

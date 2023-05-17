@@ -65,7 +65,7 @@ export async function registerCredential( vc ) {
 		address: '0x2Da061c6cFA5C23828e9D8dfbe295a22e8779712',
 		privateKey: '60090a13d72f682c03db585bf6c3a296600b5d50598a9ceef3291534dede6bea'
 	};
-	const subjectAddress = vc.credentialSubject.id.replace('did:lac:main:', '');
+	const subjectAddress = vc.credentialSubject.id.replace(/(?<=:)[^:]+$/, '');
 	const claimsVerifier = new ethers.Contract( CLAIMS_VERIFIER_CONTRACT_ADDRESS, ClaimsVerifier.abi,
 		new ethers.Wallet( '0x' + issuer.privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
 
