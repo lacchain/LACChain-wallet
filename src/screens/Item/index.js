@@ -78,14 +78,14 @@ const Item = ( { match } ) => {
 		} else {
 			switch( type.title ){
 				case 'ERC-20 Token':
-					getERC20Balance( credential.address, user.did.replace(/(?<=:)[^:]+$/, '') )
+					getERC20Balance( credential.address, user.did.replace(/.*:/, '') )
 						.then( balance => {
 							const amount = balance.toNumber() / 10**credential.decimals;
 							setBalance( amount );
 						} );
 					break;
 				case 'NFT Token':
-					getNFTBalance( credential.address, user.did.replace(/(?<=:)[^:]+$/, ''), credential.tokenId )
+					getNFTBalance( credential.address, user.did.replace(/.*:/, ''), credential.tokenId )
 						.then( balance => setBalance( balance ) );
 					break;
 				case 'Tokenized Money':

@@ -3,11 +3,11 @@ export const issuers = {
     name: "Desconocido",
     avatar: "/images/content/issuer-unknown.jpg"
   },
-  'did:lac:main:0xF8e160be646D2429C64D46Fba8e8588b8483DBaF': {
+  'did:lac:openprotest:0xF8e160be646D2429C64D46Fba8e8588b8483DBaF': {
     name: "Dr. Juan Perez",
     avatar: "/images/content/avatar-1.jpg"
   },
-  'did:lac:main:0xc1f061d629bBbA139DbD07F2eb6A9252a45514C7': {
+  'did:lac:openprotest:0xc1f061d629bBbA139DbD07F2eb6A9252a45514C7': {
     name: "Escuela 1",
     avatar: "/images/content/avatar-2.jpg"
   }

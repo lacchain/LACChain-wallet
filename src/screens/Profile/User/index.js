@@ -37,12 +37,12 @@ const User = ( { className } ) => {
 				</div>
 				<a
 					className={styles.site}
-					href="https://mailbox.lacchain.net"
+					href="https://mailbox.openprotest.lacnet.com"
 					target="_blank"
 					rel="noopener noreferrer"
 				>
 					<Icon name="globe" size="16"/>
-					<span>https://mailbox.lacchain.net</span>
+					<span>https://mailbox.openprotest.lacnet.com</span>
 				</a>
 
 				<div className={styles.control}>

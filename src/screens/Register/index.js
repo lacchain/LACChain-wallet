@@ -49,9 +49,11 @@ const Register = ({ history }) => {
     const encryptionKeyPair = await generateKeyPair();
     const controllerKeyPair = createKeyPair();
     const did = new DID( {
-      registry: '0xCC77A5e709cB473F49c943D9b40B989f986E5F2F',
-      rpcUrl: 'https://writer.lacchain.net',
-      network: 'main'
+      registry: '0xAB00e74C1b0A2313f552E869E6d55B5CdA31aFfe',
+      rpcUrl: 'https://writer-openprotest.lacnet.com',
+      network: 'openprotest',
+      nodeAddress: '0xad730de8c4bfc3d845f7ce851bcf2ea17c049585',
+      expiration: 1736394529,
     } );
     await did.addController( controllerKeyPair.address );
     setStep( 1 );
@@ -61,6 +63,12 @@ const Register = ({ history }) => {
       publicKey: `0x${encryptionKeyPair.publicKey}`,
       controller: did.address,
     } );
+    await did.addAuthenticationMethod( {
+      algorithm: 'esecp256k1vk',
+      encoding: 'blockchain',
+      publicKey: did.address,
+      controller: did.address
+    })
     setStep( 2 );
     await did.changeController( controllerKeyPair.address );
 
@@ -82,7 +90,7 @@ const Register = ({ history }) => {
         "VerifiableCredential",
         "IdentityCard"
       ],
-      "issuer": 'did:lac:main:0x2Da061c6cFA5C23828e9D8dfbe295a22e8779712',
+      "issuer": 'did:lac:openprotest:0xe2fc412f96d0c184f2c950cb707fe68b98e0b529',
       "issuanceDate": moment().toISOString(),
       "expirationDate": moment().add( 2, 'years' ).toISOString(),
       "credentialSubject": {

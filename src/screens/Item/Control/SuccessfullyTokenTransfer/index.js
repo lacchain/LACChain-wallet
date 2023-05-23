@@ -26,7 +26,7 @@ const SuccessfullyTokenTransfer = ( { className, token, receiver, onAccept } ) =
         </div>
         <div className={styles.row}>
           <div className={styles.col}>Receiver</div>
-          <div className={styles.col}>did:lac:main:0x836930...87r398</div>
+          <div className={styles.col}>did:lac:openprotest:0x836930...87r398</div>
         </div>
         <div className={styles.row}>
           <div className={styles.col}>Timestamp</div>

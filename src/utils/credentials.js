@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { ethers } from "ethers";
+import { GasModelProvider, GasModelSigner } from "@lacchain/gas-model-provider";
 import { fetchVC } from "./mailbox";
 import ClaimsVerifier from "./ClaimsVerifier";
 
@@ -8,7 +9,7 @@ import web3Utils from "web3-utils";
 import * as ethUtil from "ethereumjs-util";
 import moment from "moment";
 
-const CLAIMS_VERIFIER_CONTRACT_ADDRESS = '0x1A1a5e43B3a29cD8C0A1631d31CfBA595646074C';
+const CLAIMS_VERIFIER_CONTRACT_ADDRESS = '0x352b396727F883589ff827C53b25762605C1Cc71';
 
 const VERIFIABLE_CREDENTIAL_TYPEHASH = web3Utils.soliditySha3( "VerifiableCredential(address issuer,address subject,bytes32 data,uint256 validFrom,uint256 validTo)" );
 const EIP712DOMAIN_TYPEHASH = web3Utils.soliditySha3( "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)" );
@@ -62,12 +63,17 @@ export async function syncCredentials( user, update ) {
 
 export async function registerCredential( vc ) {
 	const issuer = {
-		address: '0x2Da061c6cFA5C23828e9D8dfbe295a22e8779712',
-		privateKey: '60090a13d72f682c03db585bf6c3a296600b5d50598a9ceef3291534dede6bea'
+		address: '0xe2fc412f96d0c184f2c950cb707fe68b98e0b529',
+		privateKey: 'b705e4debf0637e11b95d7b2743931b6059bd80cd86823791f248b85a6dfd51c'
 	};
-	const subjectAddress = vc.credentialSubject.id.replace(/(?<=:)[^:]+$/, '');
-	const claimsVerifier = new ethers.Contract( CLAIMS_VERIFIER_CONTRACT_ADDRESS, ClaimsVerifier.abi,
-		new ethers.Wallet( '0x' + issuer.privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
+	const subjectAddress = vc.credentialSubject.id.replace(/.*:/, '');
+
+	const provider = new GasModelProvider('https://writer-openprotest.lacnet.com')
+	const nodeAddress = '0xad730de8c4bfc3d845f7ce851bcf2ea17c049585';
+	const expiration = 1736394529;
+	const signer = new GasModelSigner(issuer.privateKey, provider, nodeAddress, expiration);
+
+	const claimsVerifier = new ethers.Contract( CLAIMS_VERIFIER_CONTRACT_ADDRESS, ClaimsVerifier.abi, signer);
 
 	const credentialHash = getCredentialHash( vc, issuer.address );
 	const signature = signCredential( credentialHash, issuer.privateKey );
@@ -78,7 +84,7 @@ export async function registerCredential( vc ) {
 		signature, { from: issuer.address } );
 
 	vc.proof = [{
-		id: `did:lac:main:${issuer.address}`,
+		id: `did:lac:openprotest:${issuer.address}`,
 		type: "EcdsaSecp256k1Signature2019",
 		proofPurpose: "assertionMethod",
 		verificationMethod: `${vc.issuer}#vm-0`,
