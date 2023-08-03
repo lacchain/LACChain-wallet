@@ -8,6 +8,7 @@ import web3Abi from "web3-eth-abi";
 import web3Utils from "web3-utils";
 import * as ethUtil from "ethereumjs-util";
 import moment from "moment";
+import { Lac1DID } from "@lacchain/did";
 
 const CLAIMS_VERIFIER_CONTRACT_ADDRESS = '0x352b396727F883589ff827C53b25762605C1Cc71';
 
@@ -20,7 +21,7 @@ function sha256( data ) {
 	return hashFn.digest( 'hex' );
 }
 
-function getCredentialHash( vc, issuerAddress ) {
+function getCredentialHash( vc, issuerAddress, subjectAddress ) {
 	const hashDiplomaHex = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 
 	const encodeEIP712Domain = web3Abi.encodeParameters(
@@ -31,7 +32,6 @@ function getCredentialHash( vc, issuerAddress ) {
 
 	const validFrom = new Date( vc.issuanceDate ).getTime();
 	const validTo = new Date( vc.expirationDate ).getTime();
-	const subjectAddress = vc.credentialSubject.id.split( ':' ).slice( -1 )[0];
 	const encodeHashCredential = web3Abi.encodeParameters(
 		['bytes32', 'address', 'address', 'bytes32', 'uint256', 'uint256'],
 		[VERIFIABLE_CREDENTIAL_TYPEHASH, issuerAddress, subjectAddress, hashDiplomaHex, Math.round( validFrom / 1000 ), Math.round( validTo / 1000 )]
@@ -66,7 +66,10 @@ export async function registerCredential( vc ) {
 		address: '0xe2fc412f96d0c184f2c950cb707fe68b98e0b529',
 		privateKey: 'b705e4debf0637e11b95d7b2743931b6059bd80cd86823791f248b85a6dfd51c'
 	};
-	const subjectAddress = vc.credentialSubject.id.replace(/.*:/, '');
+	let subjectAddress = vc.credentialSubject.id.replace(/.*:/, '');
+	if(!ethers.utils.isAddress(subjectAddress)) {
+		subjectAddress = Lac1DID.decodeDid(vc.credentialSubject.id).address;
+	}
 
 	const provider = new GasModelProvider('https://writer-openprotest.lacnet.com')
 	const nodeAddress = '0xad730de8c4bfc3d845f7ce851bcf2ea17c049585';
@@ -75,7 +78,7 @@ export async function registerCredential( vc ) {
 
 	const claimsVerifier = new ethers.Contract( CLAIMS_VERIFIER_CONTRACT_ADDRESS, ClaimsVerifier.abi, signer);
 
-	const credentialHash = getCredentialHash( vc, issuer.address );
+	const credentialHash = getCredentialHash( vc, issuer.address, subjectAddress );
 	const signature = signCredential( credentialHash, issuer.privateKey );
 
 	const tx = await claimsVerifier.registerCredential( subjectAddress, credentialHash,

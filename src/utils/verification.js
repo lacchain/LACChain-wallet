@@ -19,6 +19,7 @@ import trustedContext from "./schemas/trusted.json";
 import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
 import educationContext from "./schemas/education.json";
 import { GasModelProvider, GasModelSigner } from "@lacchain/gas-model-provider";
+import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
 
 const JSONLD_DOCUMENTS = {
 	"https://w3id.org/security/bbs/v1": bbsContext,
@@ -51,7 +52,7 @@ export const verifyCredential = async vc => {
 	const rsv = ethUtil.fromRpcSig( vc.proof[0].proofValue );
 	const result = await contract.verifyCredential( [
 		vc.issuer.replace( /.*:/, '' ),
-		vc.credentialSubject.id.replace( /.*:/, '' ),
+		ethers.utils.isAddress(vc.credentialSubject.id.replace( /.*:/, '' )) ? vc.credentialSubject.id.replace( /.*:/, '' ): DIDLac1.decodeDid(vc.credentialSubject.id).address,
 		data,
 		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
 		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )
@@ -73,7 +74,7 @@ export const verifySignature = async( vc, signature ) => {
 
 	return await contract.verifySigner( [
 		vc.issuer.replace( /.*:/, '' ),
-		vc.credentialSubject.id.replace( /.*:/, '' ),
+		ethers.utils.isAddress(vc.credentialSubject.id.replace( /.*:/, '' )) ? vc.credentialSubject.id.replace( /.*:/, '' ): DIDLac1.decodeDid(vc.credentialSubject.id).address,
 		data,
 		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
 		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )

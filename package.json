@@ -8,7 +8,7 @@
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
     "@fortawesome/react-fontawesome": "^0.1.17",
-    "@lacchain/did": "^1.4.7",
+    "@lacchain/did": "^1.6.3",
     "@lacchain/gas-model-provider": "^1.0.1",
     "@mattrglobal/jsonld-signatures-bbs": "0.10.0",
     "@mattrglobal/node-bbs-signatures": "0.12.0",

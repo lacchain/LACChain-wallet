@@ -2390,12 +2390,12 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
-"@lacchain/did@^1.4.7":
-  version "1.4.7"
-  resolved "https://registry.npmmirror.com/@lacchain/did/-/did-1.4.7.tgz#880f55d7d44e7e22e1cf0d95d89130dafa0f7868"
-  integrity sha512-Y0/4w9Dw2y+3PNgApHdIgZLvtGSAg0ycylE+tmV3oBth44/erYAc8KCl9BquCSS02+oa0m1McZIPgUzAmCnCnQ==
+"@lacchain/did@^1.6.3":
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/@lacchain/did/-/did-1.6.3.tgz#53812063339f82815591a73d7712021dce2c565f"
+  integrity sha512-qAYewqi4SIMSOTAZDMqHh0SXDjCNueY7PhGggFH7hjZrHADizfQ5gsUTNguYXirPOlY59Hq7XNzovAA3bqtcvw==
   dependencies:
-    "@lacchain/gas-model-provider" "^1.0.1"
+    "@lacchain/gas-model-provider" "^1.1.0"
     bs58 "^4.0.1"
     ethereumjs-tx "^1.3.4"
     ethereumjs-util "^5.1.5"
@@ -2407,6 +2407,15 @@
   version "1.0.1"
   resolved "https://registry.npmmirror.com/@lacchain/gas-model-provider/-/gas-model-provider-1.0.1.tgz#f9ba0daa23a10e9566adfc89996797b79e9b4abe"
   integrity sha512-/KwT+fY0h3m8fCH/SeQs5ODhxjEg38X1TZxg8MMeNMO9v7WPYLsilPYCA6nsbQDL2r0K+7yymYE27fPc2FdSbg==
+  dependencies:
+    "@ethersproject/bytes" "^5.6.0"
+    "@ethersproject/transactions" "^5.6.0"
+    ethers "^5.6.0"
+
+"@lacchain/gas-model-provider@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@lacchain/gas-model-provider/-/gas-model-provider-1.1.0.tgz#e163686831a1d1bcddb1e3632c136dbd1b2b624b"
+  integrity sha512-516OkX/S/TFTHjN8o7Zsw7Mu2cy2iOi4kW1/tIN5gc3aoGK3Y4rw3leiBIMcIgqjW8BrJzaFufq9TjTPMayMDg==
   dependencies:
     "@ethersproject/bytes" "^5.6.0"
     "@ethersproject/transactions" "^5.6.0"

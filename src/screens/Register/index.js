@@ -7,7 +7,7 @@ import Control from "../../components/Control";
 import TextInput from "../../components/TextInput";
 import Icon from "../../components/Icon";
 import { generateKeyPair } from "../../utils/did";
-import { DID } from "@lacchain/did";
+import { DID, Lac1DID } from "@lacchain/did";
 import { createKeyPair } from "@lacchain/did/lib/utils";
 import { sendVC } from "../../utils/mailbox";
 import { registerCredential } from "../../utils/credentials";
@@ -48,13 +48,25 @@ const Register = ({ history }) => {
     setSending( true );
     const encryptionKeyPair = await generateKeyPair();
     const controllerKeyPair = createKeyPair();
-    const did = new DID( {
+    let did;
+    if(process.env.REACT_APP_DID_METHOD === "lac1") {
+      did = await Lac1DID.new( {
+        registry: '0xb4FB2e9BB0001cc8eAAE528571915F35Cb74C864',
+        rpcUrl: 'https://writer-openprotest.lacnet.com',
+        network: 'openprotest',
+        nodeAddress: '0xad730de8c4bfc3d845f7ce851bcf2ea17c049585',
+        expiration: 1736394529,
+        chainId: 648540
+      } );
+    } else {
+      did = new DID( {
       registry: '0xAB00e74C1b0A2313f552E869E6d55B5CdA31aFfe',
       rpcUrl: 'https://writer-openprotest.lacnet.com',
       network: 'openprotest',
       nodeAddress: '0xad730de8c4bfc3d845f7ce851bcf2ea17c049585',
       expiration: 1736394529,
-    } );
+      } );
+    }
     await did.addController( controllerKeyPair.address );
     setStep( 1 );
     await did.addKeyAgreement( {
