@@ -26,7 +26,13 @@ import {
 } from "./VcToPdf";
 import { Document, Page } from "react-pdf/dist/entry.webpack";
 
-const navLinks = ["Claims", "Proofs", "Root of Trust", "Raw", "EU"];
+const navLinks = [
+  { name: "Claims", index: 0 },
+  { name: "Proofs", index: 1 },
+  { name: "Root of Trust", index: 2 },
+  { name: "Raw", index: 3 },
+  { name: "EU", index: 4 },
+];
 
 const keyType = {
 	'EcdsaSecp256k1Signature2019': 'Ethereum SECP256K Signature',
@@ -142,6 +148,44 @@ const Item = ( { match } ) => {
     </div>
   );
   ////////////////////////////////////
+  /// navigation bar customization ///
+  /**
+   * Checks whether the passed link is 'EU' and whether the current type is 1 or 2, then returns true.
+   * @param {string} link 
+   * @param {any} type. See {@link types}
+   * @returns boolean indicating whether the passed option must be enabled or not.
+   */
+  const isEUTabDisplayable = (link, type) => {
+    return link !== 'EU' || type.id === 1 || type.id === 2
+  }
+
+  /**
+   * At this point claims is not displayable when type.id = 12 meaning when the verifiable credential is of type 
+   * https://credentials-library.lacchain.net/credentials/health/vaccination/v2 and 
+   * https://credentials-library.lacchain.net/credentials/health/vaccination/v1
+   * @param {string} link 
+   * @param {any} type. See {@link types}
+   * @returns boolean indicating whether the passed option must be enabled or not.
+   */
+  const isClaimsDisplayable = (link, type) => {
+    return link !== 'Claims' || type.id !== 12
+  }
+
+  const filteredNavigationLinkButtons = navLinks.filter( link => 
+    isEUTabDisplayable(link.name, type) && isClaimsDisplayable(link.name, type) )
+    .map( ( x ) => (
+    <button
+      className={cn(
+        { [styles.active]: x.index === activeIndex },
+        styles.link
+      )}
+      onClick={() => setActiveIndex( x.index )}
+      key={x.index}
+    >
+      {x.name}
+    </button>
+  ) )
+  ////////////////////////////////////
 
 	return (
 		<>
@@ -199,20 +243,9 @@ const Item = ( { match } ) => {
 						{type.kind === 'vc' ?
 							<>
 								<div className={styles.nav}>
-									{navLinks.filter( link => link !== 'EU' || type.title === 'Vaccination Certificate' ).map( ( x, index ) => (
-										<button
-											className={cn(
-												{ [styles.active]: index === activeIndex },
-												styles.link
-											)}
-											onClick={() => setActiveIndex( index )}
-											key={index}
-										>
-											{x}
-										</button>
-									) )}
+									{filteredNavigationLinkButtons}
 								</div>
-								{activeIndex === 0 &&
+								{activeIndex === 0 && isClaimsDisplayable("Claims",type) &&
 								<Claims className={styles.users} claims={credential.credentialSubject}/>
 								}
 								{activeIndex === 1 &&
