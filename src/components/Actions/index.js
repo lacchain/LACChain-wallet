@@ -59,12 +59,14 @@ const Actions = ( { className, item, attachment } ) => {
 		},
 	];
 
-	if( item.proof?.find( p => p.type === 'BbsBlsSignature2020' ) ) items.push({
+	const blsInProofArray = Array.isArray(item.proof) && item.proof?.find( p => p.type === 'BbsBlsSignature2020' );
+	const blsInProof = !Array.isArray(item.proof) && item.type === 'BbsBlsSignature2020';
+	
+	if( blsInProofArray || blsInProof ) items.push({
 		title: "Create Presentation",
 		icon: "edit",
 		action: () => setVisibleModalBurn( true ),
 	});
-
 	if( attachment ) items.push({
 		title: "Download Attachment",
 		icon: "more",

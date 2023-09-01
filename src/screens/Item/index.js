@@ -20,6 +20,12 @@ import { getBalance as getERC20Balance } from "../../utils/erc20";
 import { getBalance as getNFTBalance } from "../../utils/erc721";
 import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
 
+import {
+  GetPdfFromCredential,
+  validateVaccinationCertificateV2VerifiableCredential,
+} from "./VcToPdf";
+import { Document, Page } from "react-pdf/dist/entry.webpack";
+
 const navLinks = ["Claims", "Proofs", "Root of Trust", "Raw", "EU"];
 
 const keyType = {
@@ -94,6 +100,49 @@ const Item = ( { match } ) => {
 		}
 	}, [] );
 
+  /////// VC HC1 based To PDF ////////
+  function onDocumentLoadSuccess({ numPages }) {
+    console.log("Successfully loaded document " + numPages);
+  }
+
+  let downloadablePdf = undefined;
+  let viewablePdf = undefined;
+  try {
+    if (validateVaccinationCertificateV2VerifiableCredential(credential)) {
+      let downloadablePdf1 = GetPdfFromCredential(credential);
+      downloadablePdf = downloadablePdf1;
+      viewablePdf = (
+        <Document
+          file={downloadablePdf[0].url}
+          onloadSuccess={onDocumentLoadSuccess}
+        >
+          <Page pageNumber={1} scale={0.55} />
+        </Document>
+      );
+    }
+  } catch (e) {
+    console.log("There was an error converting to image", e);
+  }
+
+  let previewVc = (
+    <div className={styles.preview}>
+      <img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card" />
+      <div className={styles.control}>
+        <div className={styles.topLeft}>{type.topLeft(credential)}</div>
+        <div className={styles.topRight}>
+          {type.topRight({ ...credential, balance })}
+        </div>
+        <div className={styles.title}>{type.claim(credential)}</div>
+        {type.icon(credential) && (
+          <div className={styles.image}>{type.icon(credential)}</div>
+        )}
+        <div className={styles.claim}>{type.title}</div>
+        <div className={styles.bottom}>{type.bottom(credential)}</div>
+      </div>
+    </div>
+  );
+  ////////////////////////////////////
+
 	return (
 		<>
 			<div>
@@ -101,15 +150,17 @@ const Item = ( { match } ) => {
 					<div className={styles.card_wrapper}>
 						<div className={styles.card}>
 							<div className={styles.preview}>
-								<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>
-								<div className={styles.control}>
-									<div className={styles.topLeft}>{type.topLeft( credential )}</div>
-									<div className={styles.topRight}>{type.topRight( { ...credential, balance } )}</div>
-									<div className={styles.title}>{type.claim( credential )}</div>
-									{type.icon(credential) && <div className={styles.image}>{type.icon(credential)}</div> }
-									<div className={styles.claim}>{type.title}</div>
-									<div className={styles.bottom}>{type.bottom( credential )}</div>
-								</div>
+                {viewablePdf && downloadablePdf ? (
+                  <a
+                    href={downloadablePdf[0].url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {viewablePdf}
+                  </a>
+                ) : (
+                  previewVc
+                )}
 							</div>
 						</div>
 						{type.kind === 'token' && type.title === 'NFT Token' && balance === 0 ? <></> :

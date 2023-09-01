@@ -5,6 +5,7 @@ import { faEthereum } from '@fortawesome/free-brands-svg-icons'
 
 export const types = {
 	'https://w3id.org/vaccination/v1': {
+		id: 1,
 		kind: 'vc',
 		title: "Vaccination Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -17,6 +18,7 @@ export const types = {
 		image2x: "/images/cards/vc-health.png"
 	},
 	'https://credentials-library.lacchain.net/credentials/health/vaccination/v1': {
+		id: 2,
 		kind: 'vc',
 		title: "Vaccination Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -29,6 +31,7 @@ export const types = {
 		image2x: "/images/cards/vc-health.png"
 	},
 	'https://credentials-library.lacchain.net/credentials/education/lacchain-academy/v1': {
+		id: 3,
 		kind: 'vc',
 		title: "Academy Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -42,6 +45,7 @@ export const types = {
 		image2x: "/images/cards/vc-academy.png"
 	},
 	'https://credentials-library.lacchain.net/credentials/education/v1': {
+		id: 4,
 		kind: 'vc',
 		title: "Education Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -55,6 +59,7 @@ export const types = {
 		image2x: "/images/cards/vc-academy.png"
 	},
 	'https://credentials-library.lacchain.net/credentials/education/redclara/diploma/v1': {
+		id: 5,
 		kind: 'vc',
 		title: "Education Certificate",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -68,6 +73,7 @@ export const types = {
 		image2x: "/images/cards/vc-academy.png"
 	},
 	'https://credentials-library.lacchain.net/credentials/identity/v1': {
+		id: 6,
 		kind: 'vc',
 		title: "LACChain ID Credential",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -80,6 +86,7 @@ export const types = {
 		image2x: "/images/cards/vc-id.png"
 	},
 	'https://www.w3.org/2018/credentials/v1': {
+		id: 7,
 		kind: 'vc',
 		title: "Verifiable Credential",
 		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
@@ -92,6 +99,7 @@ export const types = {
 		image2x: "/images/cards/vc.png"
 	},
 	'token://ERC-20': {
+		id: 8,
 		kind: 'token',
 		title: "ERC-20 Token",
 		topLeft: () => '-',
@@ -104,6 +112,7 @@ export const types = {
 		image2x: "/images/cards/vc-token-erc20.png"
 	},
 	'token://ERC20': {
+		id:9, 
 		kind: 'token',
 		title: "ERC-20 Token",
 		topLeft: () => '-',
@@ -116,6 +125,7 @@ export const types = {
 		image2x: "/images/cards/vc-token-erc20.png"
 	},
 	'token://ERC-721': {
+		id: 10,
 		kind: 'token',
 		title: "NFT Token",
 		topLeft: ( { tokenId } ) => `Token ID ${tokenId}`,
@@ -128,6 +138,7 @@ export const types = {
 		image2x: "/images/cards/vc-token-nft.png"
 	},
 	'token://TokenizedMoney': {
+		id: 11,
 		kind: 'token',
 		title: "Tokenized Money",
 		topLeft: ( { tornado } ) => `Tornado ${tornado.substr( 0, 13 )} ... ${tornado.substr( tornado.length - 11 )}`,
@@ -138,7 +149,20 @@ export const types = {
 		description: "This is an ERC-20 TokenizedMoney",
 		image: "/images/cards/vc-token-tm.png",
 		image2x: "/images/cards/vc-token-tm.png"
-	}
+	},
+	'https://credentials-library.lacchain.net/credentials/health/vaccination/v2': {
+		id: 12,
+		kind: 'vc',
+		title: "Vaccination Certificate",
+		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
+		topRight: ( { expirationDate } ) => `Expiresss ${expirationDate? moment( expirationDate ).format( 'DD/MM/YYYY' ): '--'}`,
+		claim: ( { credentialSubject } ) => `${credentialSubject.vaccine.medicinalProductName} (${credentialSubject.vaccine.atcCode})`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 13 )} ... ${issuer.substring( issuer.length - 10,issuer.length )}`,
+		icon: () => <FontAwesomeIcon icon={faHeartbeat} size="2x" />,
+		description: "LACPass - WHO - Vaccination Credential",
+		image: "/images/cards/vc-health.png",
+		image2x: "/images/cards/vc-health.png"
+	},
 };
 
 export const token_types = {
