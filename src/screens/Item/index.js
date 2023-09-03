@@ -8,6 +8,7 @@ import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
+	getChainOfTrust,
   getPublicDirectoryMember,
 	getRootOfTrust,
 	toEUCertificate,
@@ -27,6 +28,7 @@ import {
 } from "./VcToPdf";
 import { Document, Page } from "react-pdf/dist/entry.webpack";
 import { tryDecodeDomain } from "../../utils/domainType0001";
+import { ethers } from "ethers";
 
 const navLinks = [
   { name: "Claims", index: 0 },
@@ -43,71 +45,146 @@ const keyType = {
 };
 
 /**
- * There are two kind of sources that are used to resolve whether the 
+ * There are two kind of sources that are used to resolve whether the
  * entity being identified with a "did" is trusted.
  * 1. hardcoded values in this application (first verification option)
- * 2. if the option 1 happens to fail during a verification then the second option takes place, second option is 
+ * 2. if the option 1 happens to fail during a verification then the second option takes place, second option is
  * a list of onchain public directories which are queried by passing the issuer identifier (typically a "did" or decentralized identifier)
- * @param {*} did 
- * @param {*} domain 
+ * @param {*} did
+ * @param {*} domain
  * @returns - a name-avatar picture regarding the entity to be checked.
  */
 async function resolveIssuer(did, domain = undefined) {
-  if (issuers[did]) {
-    return issuers[did];
-  }
-  if (!domain) {
-	return issuers.unknown; 
-  }
-  // try to resolve public directory from domain
-  const  {error, data } = tryDecodeDomain(domain);
-  if (error) {
-	return issuers.unknown; 
-  }
-  const member = await getPublicDirectoryMember(data.publicDirectoryContractAddress, did); // TODO: data: appear as error on hovering
-  console.log("member!!", member);
-  if (member.error || !member.data.isMember) {
-    return issuers.unknown; // TODO: handle view with error
-  }
-
-  if (!member.data.legalName) {
-	return issuers.generic; // TODO: finish logic correctly
-  }
-
-  return {
-	name: member.data.legalName, 
-	avatar: issuers.generic.avatar
+	if (issuers[did]) {
+	  return issuers[did];
+	}
+	if (!domain) {
+	  return issuers.unknown;
+	}
+	// try to resolve public directory from domain
+	const { error, data } = tryDecodeDomain(domain);
+	if (error) {
+	  return issuers.unknown;
+	}
+	const member = await getPublicDirectoryMember(
+	  data.publicDirectoryContractAddress,
+	  did
+	); // TODO: data: appear as error on hovering
+	if (member.error || !member.data.isMember) {
+	  return issuers.unknown; // TODO: handle view with error
+	}
+  
+	if (!member.data.legalName) {
+	  return issuers.generic; // TODO: finish logic correctly
+	}
+  
+	return {
+	  name: member.data.legalName,
+	  avatar: issuers.generic.avatar,
 	};
-}
-
-/**
- * Depending of the type of verifiable credential, this method will validate the signature
- * and will check whether the signer is known some trusted public directory.
- * @param {*} credential 
- * @returns 
- */
-async function verifyFullCredential( credential ) {
-  // normalize proofs to array
-  if (credential && !Array.isArray(credential.proof)) {
-    credential.proof = [credential.proof];
   }
+  
+  /**
+   * Depending of the type of verifiable credential, this method will validate the signature
+   * and will check whether the signer is known over some trusted public directory.
+   * @param {*} credential
+   * @returns
+   */
+  async function verifyFullCredential(credential) {
+	// normalize proofs to array
+	if (credential && !Array.isArray(credential.proof)) {
+	  credential.proof = [credential.proof];
+	}
 	const proofs = [];
-	const verification = await verifyCredential( credential );
-	for( const proof of (credential.proof || []) ) {
-		const vm = proof.verificationMethod;
-		const did = vm.substring( 0, vm.indexOf('#') );
-    let issuerToSet = await resolveIssuer(did, proof.domain);
-		proofs.push( {
-			position: did.toLocaleLowerCase() === credential.issuer.toLowerCase() ? 'Issuer' : 'Signer',
-			type: keyType[proof.type],
-			did,
-			...( issuerToSet ),
-			valid: did === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
-		} );
+	const verification = await verifyCredential(credential);
+	for (const proof of credential.proof || []) {
+	  const vm = proof.verificationMethod;
+	  const did = vm.substring(0, vm.indexOf("#"));
+	  let issuerDetailsToSet = await resolveIssuer(did, proof.domain);
+	  proofs.push({
+		position:
+		  did.toLocaleLowerCase() === credential.issuer.toLowerCase()
+			? "Issuer"
+			: "Signer",
+		type: keyType[proof.type],
+		did,
+		...issuerDetailsToSet,
+		valid:
+		  did === credential.issuer
+			? verification.issuerSignatureValid
+			: await verifySignature(credential, proof.proofValue),
+		domain: proof.domain ? proof.domain : null,
+		verificationMethod: proof.verificationMethod
+		  ? proof.verificationMethod
+		  : null,
+	  });
 	}
 	return { proofs, verification };
-}
-
+  }
+  
+  const resolveRootOfTrustByDomain = async (proofs, issuer) => {
+	const emptyResponse = {
+	  error: false,
+	  message: null,
+	  data: {
+		trustTree: [],
+	  },
+	};
+	try {
+	  // TODO: choose just one proof .. the issuer one
+	  const foundProof = proofs.find((proof) => {
+		const vm = proof.verificationMethod; // TODO: catch
+		const did = vm.substring(0, vm.indexOf("#"));
+		return did === issuer;
+	  });
+  
+	  if (!foundProof || !foundProof.domain) {
+		return emptyResponse;
+	  }
+	  const domain = foundProof.domain;
+	  const { error, data } = tryDecodeDomain(domain);
+	  if (error) {
+		return emptyResponse;
+	  }
+	  const {
+		chainOfTrustContractAddress,
+		chainId,
+		publicDirectoryContractAddress,
+	  } = data;
+	  if (
+		chainOfTrustContractAddress === ethers.constants.AddressZero ||
+		publicDirectoryContractAddress === ethers.constants.AddressZero
+	  ) {
+		return emptyResponse;
+	  }
+	  const vm = foundProof.verificationMethod; // TODO: catch
+	  const did = vm.substring(0, vm.indexOf("#"));
+	  const chainOfTrustResponse = await getChainOfTrust(
+		chainOfTrustContractAddress,
+		publicDirectoryContractAddress,
+		chainId,
+		did
+	  ); // TODO: improve searching, by caching, in case did repeats
+	  if (chainOfTrustResponse.error) {
+		return emptyResponse;
+	  }
+	  return {
+		error: false,
+		message: null,
+		data: {
+		  trustTree: chainOfTrustResponse.data.trustTree,
+		},
+	  };
+	} catch (e) {
+	  const message = "There was an error while verifying against chain of trust";
+	  return {
+		error: true,
+		message,
+		data: {},
+	  };
+	}
+  };
+  
 const Item = ( { match } ) => {
 	const { user } = useAuthContext();
 
@@ -122,22 +199,49 @@ const Item = ( { match } ) => {
 	const type = ( !Array.isArray( context ) ? types[context] : types[context[context.length - 1]] ) || types['https://www.w3.org/2018/credentials/v1'];
 	const [proofs, setProofs] = useState( [] );
 
+	const resolveAndSetRootOfTrust = async (proofs, issuer) => {
+		const rootOfTrustrByDomain = await resolveRootOfTrustByDomain(
+		  proofs,
+		  issuer
+		);
+		if (
+		  !rootOfTrustrByDomain.error &&
+		  rootOfTrustrByDomain.data.trustTree.length > 0
+		) {
+		  setRootOfTrust(rootOfTrustrByDomain.data.trustTree);
+		  return;
+		}
+		try {
+		  const rootOfTrust = await getRootOfTrust(credential);
+		  const validation = await verifyRootOfTrust(
+			rootOfTrust,
+			credential.issuer
+		  );
+		  const trustTree = rootOfTrust.map((rot, i) => ({
+			...rot,
+			valid: validation[i],
+		  }));
+		  if (rootOfTrust.length > 0)
+			proofs = proofs.map((proof) => ({
+			  ...proof,
+			  name:
+				proof.did === credential.issuer
+				  ? rootOfTrust.find((r) => credential.issuer.endsWith(r.address))
+					  ?.name
+				  : proof.name,
+			}));
+		  setRootOfTrust(trustTree);
+		} catch (e) {
+		  console.log("INFO:: Unable to verify root of trust");
+		}
+	  };
+
 	useEffect( () => {
 		setActiveIndex(getInitialNavLinkToSet());
 		if( type.kind === 'vc' ) {
 			verifyFullCredential( credential ).then( async result => {
-				const rootOfTrust = await getRootOfTrust( credential );
-				const validation = await verifyRootOfTrust( rootOfTrust, credential.issuer );
-				const trustTree = rootOfTrust.map( ( rot, i ) => ( { ...rot, valid: validation[i] } ) );
-				if( rootOfTrust.length > 0 )
-					result.proofs = result.proofs.map( proof => ({
-						...proof,
-						name: proof.did === credential.issuer ?
-								rootOfTrust.find( r => credential.issuer.endsWith(r.address) )?.name :
-								proof.name
-					}) );
 				setProofs( result.proofs );
-				setRootOfTrust( trustTree );
+				await resolveAndSetRootOfTrust(result.proofs, credential.issuer);
 				setIsVerifying( false );
 			} );
 		} else {
@@ -161,7 +265,7 @@ const Item = ( { match } ) => {
 
   /////// VC HC1 based To PDF ////////
   function onDocumentLoadSuccess({ numPages }) {
-    console.log("Successfully loaded document " + numPages);
+    console.log("INFO:: Successfully loaded document " + numPages);
   }
 
   let downloadablePdf = undefined;
@@ -180,7 +284,7 @@ const Item = ( { match } ) => {
       );
     }
   } catch (e) {
-    console.log("There was an error converting to image", e);
+    console.log("ERROR:: There was an error converting to image", e);
   }
 
   let previewVc = (

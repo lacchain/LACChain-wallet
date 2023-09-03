@@ -19,10 +19,8 @@ export const checksum = (payload) => {
 };
 
 /**
- * At the time just supporting just first version ("0001") of domain type "0001"
- * @param {string} domain -  Base58 of encoded data
- * @returns 
-  {
+ * Returns the following structure:
+{
     error: boolean, message: string, data: {
         verificationRegistryContractAddress: string,
         publicDirectoryContractAddress: string,
@@ -31,6 +29,9 @@ export const checksum = (payload) => {
       }
     }
   }
+ * At the time just supporting just first version ("0001") of domain type "0001"
+ * @param {string} domain -  Base58 of encoded data
+ * @returns
  *    
  */
 export const tryDecodeDomain = (domain) => {
@@ -89,7 +90,6 @@ export const tryDecodeDomain = (domain) => {
     };
   } catch (e) {
     const message = "Error decoding domain: ";
-    console.log(message, e);
     // TODO: handle with error view
     return {
       error: true,

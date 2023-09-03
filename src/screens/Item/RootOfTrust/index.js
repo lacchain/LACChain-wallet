@@ -19,7 +19,7 @@ const RootOfTrust = ( { className, items, loading }) => {
                 </div>
             </div>
             <div className={styles.details}>
-              <div className={styles.position}>{index === items.length - 1 ? 'Issuer' : index > 0 ? 'Trusted List'  : 'Root PKD'}</div>
+              <div className={styles.position}>{index === items.length - 1 ? 'Issuer' : index > 0 ? 'Trusted List'  : 'Root'}</div>
               <div className={styles.name}>{x.name}</div>
               <div>{x.address}</div>
             </div>

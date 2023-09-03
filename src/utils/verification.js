@@ -12,17 +12,17 @@ import {
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
-import { resolve } from "./did";
+import { findDelegationKeys, resolve } from "./did";
 import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
 import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
 import educationContext from "./schemas/education.json";
-import { GasModelProvider, GasModelSigner } from "@lacchain/gas-model-provider";
+import { GasModelProvider } from "@lacchain/gas-model-provider";
 import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
 import { tryDecodeDomain } from "./domainType0001";
 import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
-import { fromUtf8 } from "ethjs-util";
+import ChainOfTrustAbi from "./ChainOfTrustAbi.js";
 
 const JSONLD_DOCUMENTS = {
   "https://w3id.org/security/bbs/v1": bbsContext,
@@ -34,7 +34,9 @@ const JSONLD_DOCUMENTS = {
     educationContext,
 };
 
-const provider = new GasModelProvider("https://writer-openprotest.lacnet.com"); // TODO: move to env
+const gasModeProvider = new GasModelProvider("https://writer-openprotest.lacnet.com"); // TODO: move to env
+const legacyProvider = new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" );
+const supportedChainId = "9e55"; // hex string
 
 export function sha256(data) {
   const hashFn = crypto.createHash("sha256");
@@ -57,7 +59,7 @@ export const getPublicDirectoryMember = async (
   const publicDirectoryContractInstance = new ethers.Contract(
     publicDirectoryContractAddress,
     PublicDirectoryAbi.abi,
-    provider
+    gasModeProvider
   );
   const publicDirectoryVersion =
     await publicDirectoryContractInstance.version(); //  TODO: catch
@@ -135,7 +137,7 @@ export const getPublicDirectoryMember = async (
   };
 };
 
-
+// TODO: conclude logic for iterating over events
 /**
  * Iteratively checks moving backwards until finding all data related to the entity being queried for.
  * @param {string} blockNumber : Last block where changes took place
@@ -148,7 +150,7 @@ export const getMemberData = async(blockNumber, id, publicDirectoryContractAddre
     const publicDirectoryContractInstance = new ethers.Contract(
       publicDirectoryContractAddress,
       PublicDirectoryAbi.abi,
-      provider
+      gasModeProvider
     );
   
     const data = await publicDirectoryContractInstance.queryFilter(
@@ -174,7 +176,7 @@ export const getMemberData = async(blockNumber, id, publicDirectoryContractAddre
     }
   } catch (err) {
     const message = "There was an error while retrieving data for the member being queried";
-    console.log(message, err);
+    console.log("Error::", message, err);
     return {
       error: true,
       message,
@@ -184,11 +186,33 @@ export const getMemberData = async(blockNumber, id, publicDirectoryContractAddre
 }
 
 export const verifyChainId = (chainId) => {
-  if (chainId && chainId.toLowerCase().replace("0x", "") !== "9e55") {
-    console.log("Unsupported chainId", chainId);
-    return false;
+  const message =  "Unsupported chain";
+  try {
+    if (chainId && chainId.toLowerCase().replace("0x", "") === supportedChainId) {
+      return {
+        error: false,
+        message: null,
+        data: {
+          isSupported: true,
+          message: '',
+        }
+      };
+    }
+    return {
+      error: false,
+      message: null,
+      data: {
+        isSupported: false,
+        message,
+      }
+    };
+  }catch(e) {
+    return {
+      error: true,
+      message: "There was a error while trying to validate chainId",
+      data: {}
+    }
   }
-  return true;
 };
 
 // TODO: implement signature verification
@@ -213,17 +237,24 @@ export const verifyCredentialFromVcAndProof = async (vc, proof) => {
 		},
 	};
   }
-  if (verifyChainId(data.chainId)) {
+
+  const isSupportedChain = verifyChainId(data.chainId);
+  if (isSupportedChain.error) {
     return {
-      error: false,
-      data: {
-        issuerSignatureValid: true,
-      },
+      error: true,
+      message: isSupportedChain.message,
+      data: {},
+    };
+  }
+  if (!isSupportedChain.data.isSupported) {
+    return {
+      error: true,
+      message: isSupportedChain.data.message,
+      data: {},
     };
   }
 
   // TODO: verify against verification registry: it is not revoked
-  // verify chain of trust
   return {
     error: false,
     data: {
@@ -232,25 +263,11 @@ export const verifyCredentialFromVcAndProof = async (vc, proof) => {
   };
 };
 
-/**
- * 
- * @param {*} identifier 
- * @returns {}
- */
-export const resolveIssuerIsKnown = async(identifier, publicDirectoryContractAddress) => {
-	const isHardcodedIssuer = issuers[identifier]; 
-    if (!isHardcodedIssuer) {
-      const r = await getPublicDirectoryMember(publicDirectoryContractAddress, identifier);
-	  return r.data.isMember ? true: false;
-    }
-	return false;
-}
-
 export const defaultVerifyCredential = async (vc) => {
   const contract = new ethers.Contract(
     vc.proof[0].domain,
     ClaimsVerifier.abi,
-    provider
+    gasModeProvider
   );
 
   const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
@@ -311,11 +328,11 @@ export const verifyCredential = async (vc) => {
   if (!verifyFromDomain.error) {
     return verifyFromDomain.data;
   }
-  // return defaultVerifyCredential(vc);
+  return defaultVerifyCredential(vc);
 };
 
 export const verifySignature = async( vc, signature ) => {
-	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, legacyProvider );
 
 	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
 
@@ -328,9 +345,156 @@ export const verifySignature = async( vc, signature ) => {
 	], signature );
 }
 
+/**
+ * Starting from a did and an a chain of trust contract address, iterates
+ * over did-document to find a delegation key that checked against the chain of trust
+ * can return true.
+ * @param {string} chainOfTrustContractAddress
+ * @param {string} publicDirectoryContractAddress
+ * @param {string} chainId - hex string of the chain Id
+ * @param {string} id - Typically a decentralized identifier (did)
+ */
+export const getChainOfTrust = async (
+  chainOfTrustContractAddress,
+  publicDirectoryContractAddress,
+  chainId,
+  id
+) => {
+  const isSupportedChain = verifyChainId(chainId);
+  if (isSupportedChain.error) {
+    return {
+      error: true,
+      message: isSupportedChain.message,
+      data: {},
+    };
+  }
+  if (!isSupportedChain.data.isSupported) {
+    return {
+      error: true,
+      message: isSupportedChain.data.message,
+      data: {},
+    };
+  }
+
+  const chainOfTrustContractInstance = new ethers.Contract(
+    chainOfTrustContractAddress,
+    ChainOfTrustAbi.abi,
+    gasModeProvider
+  ); // TODO: implement
+  const candidateManagersResponse = await getManagersCandidates(id);
+  if (candidateManagersResponse.error) {
+    return {
+      error: true,
+      message: candidateManagersResponse.message,
+      data: {},
+    };
+  }
+  const candidateManagers = candidateManagersResponse.data.managerCandidateKeys;
+  const reversedTrustTree = [];
+  // loop through the candidates
+  for (const managerCandidate of candidateManagers) {
+    // TODO: handle external call
+    const response =
+      await chainOfTrustContractInstance.getMemberDetailsByEntityManager(
+        managerCandidate
+      );
+    const memberId = parseInt(ethers.utils.formatUnits(response.gId, 0));
+    const pdMemberResponse = await getPublicDirectoryMember(
+      publicDirectoryContractAddress,
+      id
+    );
+    let name;
+    if (
+      pdMemberResponse.error ||
+      !pdMemberResponse.data.isMember ||
+      !pdMemberResponse.data.legalName
+    ) {
+      name = "Unknown";
+    }
+    name = pdMemberResponse.data.legalName;
+    if (memberId > 0 && response.isValid) {
+      const trustElement = {
+        valid: response.isValid ? true : false,
+        address: response.did,
+        name,
+      };
+      reversedTrustTree.push(trustElement);
+      let trustedBy = response.trustedBy;
+      let iter = 0;
+      while (trustedBy && iter < 4) {
+        // limiting since it is not optimized to make multiple calls
+        console.log("INFO:: Getting Root; teration #", iter + 2);
+        const r =
+          await chainOfTrustContractInstance.getMemberDetailsByEntityManager(
+            trustedBy
+          );
+        if (!r.isValid) {
+          break;
+        }
+        const pdMemberResponse = await getPublicDirectoryMember(
+          publicDirectoryContractAddress,
+          r.did
+        );
+        let name = null; //"Unknown";
+        if (
+          !pdMemberResponse.error &&
+          pdMemberResponse.data.isMember &&
+          pdMemberResponse.data.legalName
+        ) {
+          name = pdMemberResponse.data.legalName;
+        }
+        const trustElement = {
+          valid: true,
+          address: r.did,
+          name,
+        };
+        reversedTrustTree.push(trustElement);
+        if (r.trustedBy === ethers.constants.AddressZero) break;
+        trustedBy = r.trustedBy;
+        iter++;
+      }
+      break;
+    }
+  }
+
+  // TODO: get full chain of trust
+  return {
+    error: false,
+    message: null,
+    data: {
+      trustTree: reversedTrustTree.reverse(),
+    },
+  };
+};
+
+/**
+ * Gets delegation keys of type "EcdsaSecp256k1RecoveryMethod2020" and whose value is an ethereum address (BlockchainAccountId)
+ * @notice As an improvement the usage of a multicall contract will allow handling many delegation keys at once.
+ * @param {*} did 
+ * @returns - An array of candidate keys to be the managers. e.g. ['0x123...', '0xf45a2e...']
+ */
+export const getManagersCandidates = async (did) => {
+  const didDocument = await resolve(did);
+  const delegationKeys = findDelegationKeys(didDocument, 'EcdsaSecp256k1RecoveryMethod2020')
+    .map(delegationKey => '0x' + Buffer.from(delegationKey).toString('hex'));
+  if (delegationKeys.length > 5) {
+    return {
+      error: true,
+      message: "Too many delegation keys to process"
+    }
+  }
+  return {
+    error: false,
+    message: null,
+    data: {
+      managerCandidateKeys: delegationKeys
+    }
+  }
+}
+
 export const getRootOfTrust = async vc => {
 	if( !vc.trustedList ) return [];
-	const tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, legacyProvider );
 
 	const issuerAddress = vc.issuer.replace(/.*:/, '');
 	const issuer = await tlContract.entities( issuerAddress );
@@ -343,7 +507,7 @@ export const getRootOfTrust = async vc => {
 	}];
 	let parent = await tlContract.parent();
 	for( const index of [1, 2, 3, 4, 5, 6] ) {
-		const contract = new ethers.Contract( parent, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+		const contract = new ethers.Contract( parent, RootOfTrust.trustedList, legacyProvider );
 		try {
 			rootOfTrust.push( {
 				address: parent,
@@ -366,13 +530,13 @@ export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
 	if( rootOfTrust.length <= 0 ) return [];
 	if( rootOfTrust[0].address === '0x5672778D37604b365289c9CcA4dE0aE28365E2Ad' ) return new Array(rootOfTrust.length).fill(true);
 	const validation = ( new Array( rootOfTrust.length ) ).fill( false );
-	const root = new ethers.Contract( rootOfTrust[0].address, RootOfTrust.pkd, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const root = new ethers.Contract( rootOfTrust[0].address, RootOfTrust.pkd, legacyProvider );
 	if( ( await root.publicKeys( rootOfTrust[1].address ) ).status <= 0 ) return validation;
 	validation[0] = !!PKDs[rootOfTrust[0].address];
 	if( !validation[0] ) return validation;
 	let index = 1;
 	for( const tl of rootOfTrust.slice( 1 ) ) {
-		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, legacyProvider );
 		if( index + 2 >= rootOfTrust.length ) {
 			validation[index] = ( await tlContract.entities( issuer.replace( /.*:/, '' ) ) ).status === 1;
 			// TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
@@ -424,7 +588,6 @@ export const deriveCredential = async (vc, fields) => {
 
 export const toQRCode = async vc => {
 	const credential = new Buffer( gzip( JSON.stringify(vc, null, 2) ) ).toString( 'base64' );
-	console.log('base64', credential);
 	const qrcode = new Encoder();
 	qrcode.setEncodingHint( true );
 	if( vc.hash ){

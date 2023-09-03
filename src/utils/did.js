@@ -23,3 +23,15 @@ export function findKeyAgreement( doc, algorithm ) {
 	if( key.publicKeyBase64 ) return sodium.from_base64( key.publicKeyBase64 );
 	return null;
 }
+
+// TODO: improve error handling
+export function findDelegationKeys( doc, algorithm) {
+	const keys = doc.capabilityDelegation.filter( k => k.type === algorithm)
+	.map(key => {
+		if (key.blockchainAccountId) return sodium.from_hex(key.blockchainAccountId.replace('0x', ''));
+		if( key.publicKeyHex ) return sodium.from_hex( key.publicKeyHex );
+		if( key.publicKeyBase64 ) return sodium.from_base64( key.publicKeyBase64 );
+		return null;
+	}).filter(k => k !== null);
+	return keys;
+}

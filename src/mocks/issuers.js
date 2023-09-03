@@ -22,3 +22,5 @@ export const PKDs = {
   '0xF5B03EE3A63AA4220CB7C21A83c211680244eA64': 'PKD Education',
   '0x5672778D37604b365289c9CcA4dE0aE28365E2Ad': 'PKD Red Clara'
 };
+
+// TODO: add public directory v1 recognized contracts
