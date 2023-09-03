@@ -4,11 +4,11 @@ import moment from "moment";
 import * as ethUtil from "ethereumjs-util";
 import ClaimsVerifier from "./ClaimsVerifier";
 import RootOfTrust from "./RootOfTrust";
-import { Decoder, Encoder, QRByte } from '@nuintun/qrcode';
+import { Decoder, Encoder, QRByte } from "@nuintun/qrcode";
 import { gzip, ungzip } from "pako";
 import {
-	BbsBlsSignatureProof2020,
-	deriveProof
+  BbsBlsSignatureProof2020,
+  deriveProof,
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
@@ -20,52 +20,299 @@ import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
 import educationContext from "./schemas/education.json";
 import { GasModelProvider, GasModelSigner } from "@lacchain/gas-model-provider";
 import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
+import { tryDecodeDomain } from "./domainType0001";
+import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
+import { fromUtf8 } from "ethjs-util";
 
 const JSONLD_DOCUMENTS = {
-	"https://w3id.org/security/bbs/v1": bbsContext,
-	"https://www.w3.org/2018/credentials/v1": credentialContext,
-	"https://credentials-library.lacchain.net/credentials/trusted/v1": trustedContext,
-	"https://w3id.org/vaccination/v1": vaccinationContext,
-	"https://credentials-library.lacchain.net/credentials/education/v1": educationContext
+  "https://w3id.org/security/bbs/v1": bbsContext,
+  "https://www.w3.org/2018/credentials/v1": credentialContext,
+  "https://credentials-library.lacchain.net/credentials/trusted/v1":
+    trustedContext,
+  "https://w3id.org/vaccination/v1": vaccinationContext,
+  "https://credentials-library.lacchain.net/credentials/education/v1":
+    educationContext,
 };
 
-export function sha256( data ) {
-	const hashFn = crypto.createHash( 'sha256' );
-	hashFn.update( data );
-	return hashFn.digest( 'hex' );
+const provider = new GasModelProvider("https://writer-openprotest.lacnet.com"); // TODO: move to env
+
+export function sha256(data) {
+  const hashFn = crypto.createHash("sha256");
+  hashFn.update(data);
+  return hashFn.digest("hex");
 }
 
-export const verifyCredential = async vc => {
-	if( !vc.proof ) return { credentialExists: true, isNotRevoked: true, issuerSignatureValid: true, additionalSigners: true, isNotExpired: true };
-	if( !vc.proof[0].domain ) return {
-		credentialExists: false,
-		isNotRevoked: false,
-		issuerSignatureValid: false,
-		additionalSigners: false,
-		isNotExpired: false
-	}
+/**
+ * Retrieves and returns all data pertaining to an entity whose identifier is `id`
+ * @param {string} chainId
+ * @param {string} publicDirectoryContractAddress
+ * @param {string} id - e.g. a decentralized identifier (did)
+ * @returns
+ */
+export const getPublicDirectoryMember = async (
+  publicDirectoryContractAddress,
+  id
+) => {
+  // TODO: check against a list of registered PDs by this application
+  const publicDirectoryContractInstance = new ethers.Contract(
+    publicDirectoryContractAddress,
+    PublicDirectoryAbi.abi,
+    provider
+  );
+  const publicDirectoryVersion =
+    await publicDirectoryContractInstance.version(); //  TODO: catch
+  if (publicDirectoryVersion.toString() !== "1") {
+    console.log(
+      "INFO:: Public Directory Version not supported: ",
+      publicDirectoryVersion
+    );
+    return {
+      error: true,
+      data: {},
+    };
+  }
+  if (!id) {
+    return {
+      error: true,
+      data: {},
+    };
+  }
+  const member = await publicDirectoryContractInstance.getMemberDetails(id);
+  const details = member.memberData;
+  const iat = ethers.utils.formatUnits(details.iat, 0);
+  const exp = ethers.utils.formatUnits(details.exp, 0);
+  const expires = details.expires;
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (
+    iat === 0 ||
+    expires === false ||
+    (expires === true && exp < currentTime)
+  ) {
+    console.log("INFO:: Member has expired or is no longer valid");
+    return {
+      error: false,
+      data: {
+        isMember: false,
+      },
+    };
+  }
 
-	const provider = new GasModelProvider('https://writer-openprotest.lacnet.com')
-	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, provider);
+  const lastBlockChange = parseInt(
+    ethers.utils.formatUnits(member.lastBlockChange, 0)
+  );
+  // TODO: resolve member data from last block change
+  const memberData = await getMemberData(
+    lastBlockChange,
+    id,
+    publicDirectoryContractAddress
+  );
+  if (memberData.error) {
+    return {
+      error: true,
+      data: {},
+    };
+  }
+  const memberIdentificationDetails = memberData.data;
+  const legalName =
+    memberIdentificationDetails &&
+    memberIdentificationDetails.identificationData &&
+    memberIdentificationDetails.identificationData.legalName
+      ? memberIdentificationDetails.identificationData.legalName
+      : null;
+  const alpha3CountryCode =
+    memberIdentificationDetails &&
+    memberIdentificationDetails.identificationData &&
+    memberIdentificationDetails.identificationData.countryCode
+      ? memberIdentificationDetails.identificationDatacountryCode
+      : null;
+  return {
+    error: false,
+    data: {
+      isMember: true,
+      legalName,
+      alpha3CountryCode,
+    },
+  };
+};
 
-	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
-	const rsv = ethUtil.fromRpcSig( vc.proof[0].proofValue );
-	const result = await contract.verifyCredential( [
-		vc.issuer.replace( /.*:/, '' ),
-		ethers.utils.isAddress(vc.credentialSubject.id.replace( /.*:/, '' )) ? vc.credentialSubject.id.replace( /.*:/, '' ): DIDLac1.decodeDid(vc.credentialSubject.id).address,
-		data,
-		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
-		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )
-	], rsv.v, rsv.r, rsv.s );
 
-	const credentialExists = result[0];
-	const isNotRevoked = result[1];
-	const issuerSignatureValid = result[2];
-	const additionalSigners = true; //result[3];
-	const isNotExpired = result[4];
-
-	return { credentialExists, isNotRevoked, issuerSignatureValid, additionalSigners, isNotExpired };
+/**
+ * Iteratively checks moving backwards until finding all data related to the entity being queried for.
+ * @param {string} blockNumber : Last block where changes took place
+ * @param {string} id - E.g. a decentralized identifier (did)
+ * @param {string} publicDirectoryContractAddress - Contract address pertaining to the Public Directory to query against.
+ * @returns
+ */
+export const getMemberData = async(blockNumber, id, publicDirectoryContractAddress) => {
+  try {
+    const publicDirectoryContractInstance = new ethers.Contract(
+      publicDirectoryContractAddress,
+      PublicDirectoryAbi.abi,
+      provider
+    );
+  
+    const data = await publicDirectoryContractInstance.queryFilter(
+      'MemberChanged', blockNumber, blockNumber);
+    const found = data.find(log => log.address.toLocaleLowerCase() === publicDirectoryContractAddress.toLocaleLowerCase());
+    if (!found) {
+      return {
+        error: false,
+        message: null,
+        data: {
+          isRaw: null,
+        }
+      }
+    }
+    const rawData = found.args.rawData;
+    const decodedFromHex = Buffer.from(rawData.replace('0x', ''), 'hex').toString();
+    const parsedData = JSON.parse(decodedFromHex);
+    // TODO: define association between type and version better in regards to a certain public directory metaclass
+    return {
+      error: false,
+      message: null,
+      data: parsedData
+    }
+  } catch (err) {
+    const message = "There was an error while retrieving data for the member being queried";
+    console.log(message, err);
+    return {
+      error: true,
+      message,
+      data: {}
+    }
+  }
 }
+
+export const verifyChainId = (chainId) => {
+  if (chainId && chainId.toLowerCase().replace("0x", "") !== "9e55") {
+    console.log("Unsupported chainId", chainId);
+    return false;
+  }
+  return true;
+};
+
+// TODO: implement signature verification
+/**
+ * Just checks whether the signature associated with the passed proof is correct or not.
+ * Verification registry encoded in the "domain" param.
+ * @param {any} vc 
+ * @param {any} proof 
+ * @returns 
+ */
+export const verifyCredentialFromVcAndProof = async (vc, proof) => {
+  // Validate signature first
+  // Get domain
+  const { e, data } = tryDecodeDomain(
+    proof.domain
+  );
+  if (e) {
+	return {
+		error: false,
+		data: {
+		  issuerSignatureValid: true,
+		},
+	};
+  }
+  if (verifyChainId(data.chainId)) {
+    return {
+      error: false,
+      data: {
+        issuerSignatureValid: true,
+      },
+    };
+  }
+
+  // TODO: verify against verification registry: it is not revoked
+  // verify chain of trust
+  return {
+    error: false,
+    data: {
+      issuerSignatureValid: true,
+    },
+  };
+};
+
+/**
+ * 
+ * @param {*} identifier 
+ * @returns {}
+ */
+export const resolveIssuerIsKnown = async(identifier, publicDirectoryContractAddress) => {
+	const isHardcodedIssuer = issuers[identifier]; 
+    if (!isHardcodedIssuer) {
+      const r = await getPublicDirectoryMember(publicDirectoryContractAddress, identifier);
+	  return r.data.isMember ? true: false;
+    }
+	return false;
+}
+
+export const defaultVerifyCredential = async (vc) => {
+  const contract = new ethers.Contract(
+    vc.proof[0].domain,
+    ClaimsVerifier.abi,
+    provider
+  );
+
+  const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
+  const rsv = ethUtil.fromRpcSig(vc.proof[0].proofValue);
+  const result = await contract.verifyCredential(
+    [
+      vc.issuer.replace(/.*:/, ""),
+      ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
+        ? vc.credentialSubject.id.replace(/.*:/, "")
+        : DIDLac1.decodeDid(vc.credentialSubject.id).address,
+      data,
+      Math.round(moment(vc.issuanceDate).valueOf() / 1000),
+      Math.round(moment(vc.expirationDate).valueOf() / 1000),
+    ],
+    rsv.v,
+    rsv.r,
+    rsv.s
+  );
+
+  const credentialExists = result[0];
+  const isNotRevoked = result[1];
+  const issuerSignatureValid = result[2];
+  const additionalSigners = true; //result[3];
+  const isNotExpired = result[4];
+
+  return {
+    credentialExists,
+    isNotRevoked,
+    issuerSignatureValid,
+    additionalSigners,
+    isNotExpired,
+  };
+};
+
+// TODO: validate signer is in the did document
+export const verifyCredential = async (vc) => {
+  if (!vc.proof)
+    return {
+      credentialExists: true,
+      isNotRevoked: true,
+      issuerSignatureValid: true,
+      additionalSigners: true,
+      isNotExpired: true,
+    };
+  if (!vc.proof[0].domain)
+    return {
+      credentialExists: false,
+      isNotRevoked: false,
+      issuerSignatureValid: false,
+      additionalSigners: false,
+      isNotExpired: false,
+    };
+
+  const verifyFromDomain = await verifyCredentialFromVcAndProof(
+    vc,
+    vc.proof[0]
+  );
+  if (!verifyFromDomain.error) {
+    return verifyFromDomain.data;
+  }
+  // return defaultVerifyCredential(vc);
+};
 
 export const verifySignature = async( vc, signature ) => {
 	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );

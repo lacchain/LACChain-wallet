@@ -20,7 +20,6 @@ export const validateVaccinationCertificateV2VerifiableCredential = (vc) => {
 };
 
 const VcToPdf = ({ item }) => {
-  console.log("item", item);
   const styles = {
     body: {
       paddingTop: 35,

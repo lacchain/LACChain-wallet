@@ -8,6 +8,7 @@ import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
+  getPublicDirectoryMember,
 	getRootOfTrust,
 	toEUCertificate,
 	verifyCredential,
@@ -25,6 +26,7 @@ import {
   validateVaccinationCertificateV2VerifiableCredential,
 } from "./VcToPdf";
 import { Document, Page } from "react-pdf/dist/entry.webpack";
+import { tryDecodeDomain } from "../../utils/domainType0001";
 
 const navLinks = [
   { name: "Claims", index: 0 },
@@ -39,17 +41,67 @@ const keyType = {
 	'RsaSignature2018': 'RSA X.509 Signature',
 	'BbsBlsSignature2020': 'ZKP BBS+ Signature'
 };
+
+/**
+ * There are two kind of sources that are used to resolve whether the 
+ * entity being identified with a "did" is trusted.
+ * 1. hardcoded values in this application (first verification option)
+ * 2. if the option 1 happens to fail during a verification then the second option takes place, second option is 
+ * a list of onchain public directories which are queried by passing the issuer identifier (typically a "did" or decentralized identifier)
+ * @param {*} did 
+ * @param {*} domain 
+ * @returns - a name-avatar picture regarding the entity to be checked.
+ */
+async function resolveIssuer(did, domain = undefined) {
+  if (issuers[did]) {
+    return issuers[did];
+  }
+  if (!domain) {
+	return issuers.unknown; 
+  }
+  // try to resolve public directory from domain
+  const  {error, data } = tryDecodeDomain(domain);
+  if (error) {
+	return issuers.unknown; 
+  }
+  const member = await getPublicDirectoryMember(data.publicDirectoryContractAddress, did); // TODO: data: appear as error on hovering
+  console.log("member!!", member);
+  if (member.error || !member.data.isMember) {
+    return issuers.unknown; // TODO: handle view with error
+  }
+
+  if (!member.data.legalName) {
+	return issuers.generic; // TODO: finish logic correctly
+  }
+
+  return {
+	name: member.data.legalName, 
+	avatar: issuers.generic.avatar
+	};
+}
+
+/**
+ * Depending of the type of verifiable credential, this method will validate the signature
+ * and will check whether the signer is known some trusted public directory.
+ * @param {*} credential 
+ * @returns 
+ */
 async function verifyFullCredential( credential ) {
+  // normalize proofs to array
+  if (credential && !Array.isArray(credential.proof)) {
+    credential.proof = [credential.proof];
+  }
 	const proofs = [];
 	const verification = await verifyCredential( credential );
 	for( const proof of (credential.proof || []) ) {
 		const vm = proof.verificationMethod;
 		const did = vm.substring( 0, vm.indexOf('#') );
+    let issuerToSet = await resolveIssuer(did, proof.domain);
 		proofs.push( {
 			position: did.toLocaleLowerCase() === credential.issuer.toLowerCase() ? 'Issuer' : 'Signer',
 			type: keyType[proof.type],
 			did,
-			...( issuers[did] || issuers.unknown ),
+			...( issuerToSet ),
 			valid: did === credential.issuer ? verification.issuerSignatureValid : await verifySignature( credential, proof.proofValue )
 		} );
 	}
@@ -71,6 +123,7 @@ const Item = ( { match } ) => {
 	const [proofs, setProofs] = useState( [] );
 
 	useEffect( () => {
+		setActiveIndex(getInitialNavLinkToSet());
 		if( type.kind === 'vc' ) {
 			verifyFullCredential( credential ).then( async result => {
 				const rootOfTrust = await getRootOfTrust( credential );
@@ -170,6 +223,20 @@ const Item = ( { match } ) => {
   const isClaimsDisplayable = (link, type) => {
     return link !== 'Claims' || type.id !== 12
   }
+
+  const getInitialNavLinkToSet = () => {
+    let idxToSet = 1000;
+    navLinks
+      .filter(
+        (link) =>
+          isEUTabDisplayable(link.name, type) &&
+          isClaimsDisplayable(link.name, type)
+      )
+      .map((el) => {
+        if (el.index < idxToSet) idxToSet = el.index;
+      });
+    return idxToSet;
+  };
 
   const filteredNavigationLinkButtons = navLinks.filter( link => 
     isEUTabDisplayable(link.name, type) && isClaimsDisplayable(link.name, type) )

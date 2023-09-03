@@ -10,6 +10,10 @@ export const issuers = {
   'did:lac:openprotest:0xc1f061d629bBbA139DbD07F2eb6A9252a45514C7': {
     name: "Escuela 1",
     avatar: "/images/content/avatar-2.jpg"
+  },
+  generic: {
+    name: "Recognized Entity",
+    avatar: "/images/content/company-1.png"
   }
 };
 
