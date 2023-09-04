@@ -8,9 +8,9 @@ import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
-	getChainOfTrust,
   getPublicDirectoryMember,
 	getRootOfTrust,
+	resolveRootOfTrustByDomain,
 	toEUCertificate,
 	verifyCredential,
 	verifyRootOfTrust,
@@ -28,7 +28,6 @@ import {
 } from "./VcToPdf";
 import { Document, Page } from "react-pdf/dist/entry.webpack";
 import { tryDecodeDomain } from "../../utils/domainType0001";
-import { ethers } from "ethers";
 
 const navLinks = [
   { name: "Claims", index: 0 },
@@ -122,69 +121,6 @@ async function resolveIssuer(did, domain = undefined) {
 	return { proofs, verification };
   }
   
-  const resolveRootOfTrustByDomain = async (proofs, issuer) => {
-	const emptyResponse = {
-	  error: false,
-	  message: null,
-	  data: {
-		trustTree: [],
-	  },
-	};
-	try {
-	  // TODO: choose just one proof .. the issuer one
-	  const foundProof = proofs.find((proof) => {
-		const vm = proof.verificationMethod; // TODO: catch
-		const did = vm.substring(0, vm.indexOf("#"));
-		return did === issuer;
-	  });
-  
-	  if (!foundProof || !foundProof.domain) {
-		return emptyResponse;
-	  }
-	  const domain = foundProof.domain;
-	  const { error, data } = tryDecodeDomain(domain);
-	  if (error) {
-		return emptyResponse;
-	  }
-	  const {
-		chainOfTrustContractAddress,
-		chainId,
-		publicDirectoryContractAddress,
-	  } = data;
-	  if (
-		chainOfTrustContractAddress === ethers.constants.AddressZero ||
-		publicDirectoryContractAddress === ethers.constants.AddressZero
-	  ) {
-		return emptyResponse;
-	  }
-	  const vm = foundProof.verificationMethod; // TODO: catch
-	  const did = vm.substring(0, vm.indexOf("#"));
-	  const chainOfTrustResponse = await getChainOfTrust(
-		chainOfTrustContractAddress,
-		publicDirectoryContractAddress,
-		chainId,
-		did
-	  ); // TODO: improve searching, by caching, in case did repeats
-	  if (chainOfTrustResponse.error) {
-		return emptyResponse;
-	  }
-	  return {
-		error: false,
-		message: null,
-		data: {
-		  trustTree: chainOfTrustResponse.data.trustTree,
-		},
-	  };
-	} catch (e) {
-	  const message = "There was an error while verifying against chain of trust";
-	  return {
-		error: true,
-		message,
-		data: {},
-	  };
-	}
-  };
-  
 const Item = ( { match } ) => {
 	const { user } = useAuthContext();
 
@@ -199,40 +135,62 @@ const Item = ( { match } ) => {
 	const type = ( !Array.isArray( context ) ? types[context] : types[context[context.length - 1]] ) || types['https://www.w3.org/2018/credentials/v1'];
 	const [proofs, setProofs] = useState( [] );
 
-	const resolveAndSetRootOfTrust = async (proofs, issuer) => {
-		const rootOfTrustrByDomain = await resolveRootOfTrustByDomain(
-		  proofs,
-		  issuer
-		);
-		if (
-		  !rootOfTrustrByDomain.error &&
-		  rootOfTrustrByDomain.data.trustTree.length > 0
-		) {
-		  setRootOfTrust(rootOfTrustrByDomain.data.trustTree);
-		  return;
+	const resolveRootOfTrust = async (
+		proofs,
+		issuer,
+		trustedList = undefined
+	  ) => {
+		if (!trustedList) {
+		  const rootOfTrustrByDomain = await resolveRootOfTrustByDomain(
+			proofs,
+			issuer
+		  );
+		  if (
+			!rootOfTrustrByDomain.error &&
+			rootOfTrustrByDomain.data.trustTree.length > 0
+		  ) {
+			setRootOfTrust(rootOfTrustrByDomain.data.trustTree);
+			return {
+			  error: false,
+			  message: null,
+			  data: {
+				trustTree: rootOfTrustrByDomain.data.trustTree,
+			  },
+			};
+		  }
 		}
 		try {
-		  const rootOfTrust = await getRootOfTrust(credential);
-		  const validation = await verifyRootOfTrust(
-			rootOfTrust,
-			credential.issuer
-		  );
+		  const rootOfTrust = await getRootOfTrust(trustedList, issuer);
+		  const validation = await verifyRootOfTrust(rootOfTrust, issuer);
 		  const trustTree = rootOfTrust.map((rot, i) => ({
 			...rot,
 			valid: validation[i],
 		  }));
-		  if (rootOfTrust.length > 0)
+		  if (rootOfTrust.length > 0) {
 			proofs = proofs.map((proof) => ({
 			  ...proof,
 			  name:
-				proof.did === credential.issuer
-				  ? rootOfTrust.find((r) => credential.issuer.endsWith(r.address))
-					  ?.name
+				proof.did === issuer
+				  ? rootOfTrust.find((r) => issuer.endsWith(r.address))?.name
 				  : proof.name,
 			}));
+			setProofs(proofs);
+		  }
 		  setRootOfTrust(trustTree);
+		  return {
+			error: false,
+			message: null,
+			data: {
+			  trustTree,
+			},
+		  };
 		} catch (e) {
-		  console.log("INFO:: Unable to verify root of trust");
+		  const message = "Unable to verify root of trust";
+		  return {
+			error: true,
+			message,
+			data: {},
+		  };
 		}
 	  };
 
@@ -241,7 +199,10 @@ const Item = ( { match } ) => {
 		if( type.kind === 'vc' ) {
 			verifyFullCredential( credential ).then( async result => {
 				setProofs( result.proofs );
-				await resolveAndSetRootOfTrust(result.proofs, credential.issuer);
+				const trustTreeResponse = await resolveRootOfTrust(result.proofs, credential.issuer, credential.trustedList );
+				if (trustTreeResponse.error) {
+					console.log("ERROR::", trustTreeResponse.message);
+				}
 				setIsVerifying( false );
 			} );
 		} else {

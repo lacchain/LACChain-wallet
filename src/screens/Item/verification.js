@@ -49,7 +49,8 @@ const Item = ( { match } ) => {
 							setCBOR( cbor );
 							const credential = credentials.find( c => c.id === vc.id );
 							const result = await verifyFullCredential( credential );
-							const rot = await verifyRootOfTrust( await getRootOfTrust( credential ), credential.issuer );
+							const rot = await verifyRootOfTrust( await getRootOfTrust( credential.trustedList,
+								credential.issuer ), credential.issuer );
 							result.verification.isTrusted = rot[rot.length - 1];
 							setVerification( result.verification );
 							setIsVerifying( false );

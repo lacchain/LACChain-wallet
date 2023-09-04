@@ -8,11 +8,12 @@ import Report from "../Report";
 import Icon from "../Icon";
 import Modal from "../../components/Modal";
 import {
-	getRootOfTrust,
-	toCborQR, toQRCode,
-	verifyCredential, verifyRootOfTrust
+	fullyVerifyCredential,
+	resolveRootOfTrust,
+	toQRCode,
+	verifyCredential
 } from "../../utils/verification";
-import CredentialVerfication from "../../screens/Item/Control/CredentialVerfication";
+import { Type1CredentialVerfication, Type2CredentialVerfication, Wait } from "../../screens/Item/Control/CredentialVerfication";
 import Presentation from "../Presentation";
 
 const Actions = ( { className, item, attachment } ) => {
@@ -21,12 +22,16 @@ const Actions = ( { className, item, attachment } ) => {
 	const [visibleModalRemoveSale, setVisibleModalRemoveSale] = useState( false );
 	const [visibleModalBurn, setVisibleModalBurn] = useState( false );
 	const [visibleModalReport, setVisibleModalReport] = useState( false );
+	const [visibleHealthQr, setVisibleHealthQr] = useState( false );
 
 	const [visibleModalVerification, setVisibleModalVerification] = useState( false );
 	const [verification, setVerification] = useState( {} );
 	const [verifying, setVerifying] = useState( false );
+	const [isType1Verification, setIsType1Verification] = useState( false );
+	const [isType2Verification, setIsType2Verification] = useState( false );
 
 	const [qrCode, setQRCode] = useState( "" );
+	const [healthQrcode, setHealthQRCode] = useState("");
 
 	const items = [
 		{
@@ -40,23 +45,32 @@ const Actions = ( { className, item, attachment } ) => {
 			action: async () => {
 				setVerifying( true );
 				setVisibleModalVerification( true );
-				const verification = await verifyCredential( item );
-				const rootOfTrust = await getRootOfTrust( item );
-				const validation = await verifyRootOfTrust( rootOfTrust, item.issuer );
-				setVerification( { ...verification, isTrusted: validation[validation.length - 1] } );
+				const verificationResponse = await fullyVerifyCredential(item, item.proof);
+				let verification;
+				let isType1Verification = false;
+				let isType2Verification = false;
+				if (!verificationResponse.error) {
+					verification = verificationResponse.data;
+					isType2Verification = true;
+				} else {
+					verification = await verifyCredential( item );
+					isType1Verification = true;
+				}
+				// TODO: improve, avoid passing proofs
+				const rotResponse = await resolveRootOfTrust(item.issuer, item.trustedList, item.proof );
+				if (rotResponse.error) {
+					console.log("ERROR:: ", rotResponse.message);
+					setVerifying(false);
+					return;
+				}
+				const retrievedTrustTree = rotResponse.data.trustTree;
+				const isTrusted = retrievedTrustTree.length > 0 && retrievedTrustTree[retrievedTrustTree.length -1]
+				setVerification( { ...verification, isTrusted } );
+				if (isType1Verification) setIsType1Verification(isType1Verification);
+				if (isType2Verification) setIsType2Verification(isType2Verification);
 				setVerifying( false );
 			},
-		},
-		{
-			title: "Show QR Code",
-			icon: "report",
-			action: () => {
-				toQRCode( item ).then( qr => {
-					setQRCode( qr );
-					setVisibleModalReport( true );
-				} );
-			},
-		},
+		}
 	];
 
 	const blsInProofArray = Array.isArray(item.proof) && item.proof?.find( p => p.type === 'BbsBlsSignature2020' );
@@ -80,6 +94,34 @@ const Actions = ( { className, item, attachment } ) => {
 		},
 	});
 
+	const isHealthCredentialType2 = item && typeof(item['@context']) === "object" &&
+	(item["@context"]).find(el => el === "https://www.w3.org/2018/credentials/v1") &&
+	(item["@context"]).find(el => el === "https://w3id.org/vaccination/v1") &&
+	(item["@context"]).find(el => el === "https://credentials-library.lacchain.net/credentials/health/vaccination/v2");
+	const isHealthImage = item && item.credentialSubject && 
+	item.credentialSubject.image && item.credentialSubject.image ? item.credentialSubject.image: null;
+	if( isHealthCredentialType2  && isHealthImage) {
+		items.push({
+			title: "Show Health QR Code",
+			icon: "report",
+			action: () => {
+				setHealthQRCode(`data:image/png;base64,${item.credentialSubject.image.contentUrl}`);
+				setVisibleHealthQr(true);
+			}
+		})
+	} else {
+		items.push({
+			title: "Show QR Code",
+			icon: "report",
+			action: () => {
+				toQRCode( item ).then( qr => {
+					setQRCode( qr );
+					setVisibleModalReport( true );
+				} );
+			},
+		})
+	}
+
 	return (
 		<>
 			<OutsideClickHandler onOutsideClick={ () => {} }>
@@ -101,6 +143,12 @@ const Actions = ( { className, item, attachment } ) => {
 					</div>
 				</div>
 			</OutsideClickHandler>
+			<Modal
+				visible={visibleHealthQr}
+				onClose={() => setVisibleHealthQr( false )}
+			>
+				<Report qr={healthQrcode}/>
+			</Modal>
 			<Modal
 				visible={visibleModalTransfer}
 				onClose={() => setVisibleModalTransfer( false )}
@@ -129,7 +177,9 @@ const Actions = ( { className, item, attachment } ) => {
 				visible={visibleModalVerification}
 				onClose={() => setVisibleModalVerification( false )}
 			>
-				<CredentialVerfication results={verification || {}} loading={verifying}/>
+				{verifying ? <Wait/>:null}
+				{isType1Verification ? <Type1CredentialVerfication results={verification || {}} />: null}
+				{isType2Verification ? <Type2CredentialVerfication results={verification || {}} />: null}
 			</Modal>
 		</>
 	);

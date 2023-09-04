@@ -34,8 +34,12 @@ const JSONLD_DOCUMENTS = {
     educationContext,
 };
 
-const gasModeProvider = new GasModelProvider("https://writer-openprotest.lacnet.com"); // TODO: move to env
-const legacyProvider = new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" );
+const gasModeProvider = new GasModelProvider(
+  "https://writer-openprotest.lacnet.com"
+); // TODO: move to env
+const legacyProvider = new ethers.providers.JsonRpcProvider(
+  "https://writer.lacchain.net"
+);
 const supportedChainId = "9e55"; // hex string
 
 export function sha256(data) {
@@ -145,57 +149,75 @@ export const getPublicDirectoryMember = async (
  * @param {string} publicDirectoryContractAddress - Contract address pertaining to the Public Directory to query against.
  * @returns
  */
-export const getMemberData = async(blockNumber, id, publicDirectoryContractAddress) => {
+export const getMemberData = async (
+  blockNumber,
+  id,
+  publicDirectoryContractAddress
+) => {
   try {
     const publicDirectoryContractInstance = new ethers.Contract(
       publicDirectoryContractAddress,
       PublicDirectoryAbi.abi,
       gasModeProvider
     );
-  
+
     const data = await publicDirectoryContractInstance.queryFilter(
-      'MemberChanged', blockNumber, blockNumber);
-    const found = data.find(log => log.address.toLocaleLowerCase() === publicDirectoryContractAddress.toLocaleLowerCase());
+      "MemberChanged",
+      blockNumber,
+      blockNumber
+    );
+    const found = data.find(
+      (log) =>
+        log.address.toLocaleLowerCase() ===
+        publicDirectoryContractAddress.toLocaleLowerCase()
+    );
     if (!found) {
       return {
         error: false,
         message: null,
         data: {
           isRaw: null,
-        }
-      }
+        },
+      };
     }
     const rawData = found.args.rawData;
-    const decodedFromHex = Buffer.from(rawData.replace('0x', ''), 'hex').toString();
+    const decodedFromHex = Buffer.from(
+      rawData.replace("0x", ""),
+      "hex"
+    ).toString();
     const parsedData = JSON.parse(decodedFromHex);
     // TODO: define association between type and version better in regards to a certain public directory metaclass
     return {
       error: false,
       message: null,
-      data: parsedData
-    }
+      data: parsedData,
+    };
   } catch (err) {
-    const message = "There was an error while retrieving data for the member being queried";
+    const message =
+      "There was an error while retrieving data for the member being queried";
     console.log("Error::", message, err);
     return {
       error: true,
       message,
-      data: {}
-    }
+      data: {},
+    };
   }
-}
+};
 
 export const verifyChainId = (chainId) => {
-  const message =  "Unsupported chain";
+  const message = "Unsupported chain";
   try {
-    if (chainId && chainId.toLowerCase().replace("0x", "") === supportedChainId) {
+    if (
+      chainId &&
+      chainId.toLowerCase().replace("0x", "") === supportedChainId
+    ) {
       return {
         error: false,
         message: null,
         data: {
           isSupported: true,
-          message: '',
-        }
+          message: "",
+        },
       };
     }
     return {
@@ -204,38 +226,35 @@ export const verifyChainId = (chainId) => {
       data: {
         isSupported: false,
         message,
-      }
+      },
     };
-  }catch(e) {
+  } catch (e) {
     return {
       error: true,
       message: "There was a error while trying to validate chainId",
-      data: {}
-    }
+      data: {},
+    };
   }
 };
 
 // TODO: implement signature verification
 /**
- * Just checks whether the signature associated with the passed proof is correct or not.
+ * Checks whether the signature associated with the passed proof is correct or not.
  * Verification registry encoded in the "domain" param.
- * @param {any} vc 
- * @param {any} proof 
- * @returns 
+ * @param {any} vc
+ * @param {any} proof
+ * @returns
  */
-export const verifyCredentialFromVcAndProof = async (vc, proof) => {
+export const verifyOffChainCredentialSignature = async (vc, proof) => {
   // Validate signature first
   // Get domain
-  const { e, data } = tryDecodeDomain(
-    proof.domain
-  );
-  if (e) {
-	return {
-		error: false,
-		data: {
-		  issuerSignatureValid: true,
-		},
-	};
+  const { error, message, data } = tryDecodeDomain(proof.domain);
+  if (error) {
+    return {
+      error: true,
+      message,
+      data: {},
+    };
   }
 
   const isSupportedChain = verifyChainId(data.chainId);
@@ -263,6 +282,63 @@ export const verifyCredentialFromVcAndProof = async (vc, proof) => {
   };
 };
 
+export const fullyVerifyCredential = async (vc, proofArray) => {
+  if (!proofArray || !Array.isArray(proofArray) || proofArray.length ===0) {
+    const message = "Invalid proof array";
+    return {
+      error: true,
+      message,
+      data: {},
+    }
+  }
+  // TODO: implement a logic to get a proof with some logic
+  // TODO: IMPLEMENT!
+  const proof = proofArray[0]; // just taking the first element
+  const { error, data, m } = tryDecodeDomain(proof.domain);
+  if (error) {
+    return {
+      error,
+      message: m,
+      data: {},
+    };
+  }
+
+  const isSupportedChain = verifyChainId(data.chainId);
+  if (isSupportedChain.error) {
+    return {
+      error: true,
+      message: isSupportedChain.message,
+      data: {},
+    };
+  }
+  if (!isSupportedChain.data.isSupported) {
+    return {
+      error: true,
+      message: isSupportedChain.data.message,
+      data: {},
+    };
+  }
+
+  const signatureResponse = await verifyOffChainCredentialSignature(vc, proof);
+  if (signatureResponse.error) {
+    return {
+      error: true,
+      message: signatureResponse.message,
+      data: {}
+    }
+  }
+
+  // TODO: verify against verification registry: it is not revoked
+  return {
+    error: false,
+    data: {
+      issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
+      isNotRevoked: true,
+      isNotExpired: true,
+    },
+  };
+};
+
 export const defaultVerifyCredential = async (vc) => {
   const contract = new ethers.Contract(
     vc.proof[0].domain,
@@ -286,11 +362,10 @@ export const defaultVerifyCredential = async (vc) => {
     rsv.r,
     rsv.s
   );
-
   const credentialExists = result[0];
   const isNotRevoked = result[1];
   const issuerSignatureValid = result[2];
-  const additionalSigners = true; //result[3];
+  const additionalSigners = result[3];
   const isNotExpired = result[4];
 
   return {
@@ -321,7 +396,7 @@ export const verifyCredential = async (vc) => {
       isNotExpired: false,
     };
 
-  const verifyFromDomain = await verifyCredentialFromVcAndProof(
+  const verifyFromDomain = await verifyOffChainCredentialSignature(
     vc,
     vc.proof[0]
   );
@@ -331,19 +406,28 @@ export const verifyCredential = async (vc) => {
   return defaultVerifyCredential(vc);
 };
 
-export const verifySignature = async( vc, signature ) => {
-	const contract = new ethers.Contract( vc.proof[0].domain, ClaimsVerifier.abi, legacyProvider );
+export const verifySignature = async (vc, signature) => {
+  const contract = new ethers.Contract(
+    vc.proof[0].domain,
+    ClaimsVerifier.abi,
+    legacyProvider
+  );
 
-	const data = `0x${sha256( JSON.stringify( vc.credentialSubject ) )}`;
+  const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
 
-	return await contract.verifySigner( [
-		vc.issuer.replace( /.*:/, '' ),
-		ethers.utils.isAddress(vc.credentialSubject.id.replace( /.*:/, '' )) ? vc.credentialSubject.id.replace( /.*:/, '' ): DIDLac1.decodeDid(vc.credentialSubject.id).address,
-		data,
-		Math.round( moment( vc.issuanceDate ).valueOf() / 1000 ),
-		Math.round( moment( vc.expirationDate ).valueOf() / 1000 )
-	], signature );
-}
+  return await contract.verifySigner(
+    [
+      vc.issuer.replace(/.*:/, ""),
+      ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
+        ? vc.credentialSubject.id.replace(/.*:/, "")
+        : DIDLac1.decodeDid(vc.credentialSubject.id).address,
+      data,
+      Math.round(moment(vc.issuanceDate).valueOf() / 1000),
+      Math.round(moment(vc.expirationDate).valueOf() / 1000),
+    ],
+    signature
+  );
+};
 
 /**
  * Starting from a did and an a chain of trust contract address, iterates
@@ -470,174 +554,327 @@ export const getChainOfTrust = async (
 /**
  * Gets delegation keys of type "EcdsaSecp256k1RecoveryMethod2020" and whose value is an ethereum address (BlockchainAccountId)
  * @notice As an improvement the usage of a multicall contract will allow handling many delegation keys at once.
- * @param {*} did 
+ * @param {*} did
  * @returns - An array of candidate keys to be the managers. e.g. ['0x123...', '0xf45a2e...']
  */
 export const getManagersCandidates = async (did) => {
   const didDocument = await resolve(did);
-  const delegationKeys = findDelegationKeys(didDocument, 'EcdsaSecp256k1RecoveryMethod2020')
-    .map(delegationKey => '0x' + Buffer.from(delegationKey).toString('hex'));
+  const delegationKeys = findDelegationKeys(
+    didDocument,
+    "EcdsaSecp256k1RecoveryMethod2020"
+  ).map((delegationKey) => "0x" + Buffer.from(delegationKey).toString("hex"));
   if (delegationKeys.length > 5) {
     return {
       error: true,
-      message: "Too many delegation keys to process"
-    }
+      message: "Too many delegation keys to process",
+    };
   }
   return {
     error: false,
     message: null,
     data: {
-      managerCandidateKeys: delegationKeys
-    }
-  }
-}
-
-export const getRootOfTrust = async vc => {
-	if( !vc.trustedList ) return [];
-	const tlContract = new ethers.Contract( vc.trustedList, RootOfTrust.trustedList, legacyProvider );
-
-	const issuerAddress = vc.issuer.replace(/.*:/, '');
-	const issuer = await tlContract.entities( issuerAddress );
-	const rootOfTrust = [{
-		address: issuerAddress,
-		name: issuer.name
-	}, {
-		address: vc.trustedList,
-		name: await tlContract.name()
-	}];
-	let parent = await tlContract.parent();
-	for( const index of [1, 2, 3, 4, 5, 6] ) {
-		const contract = new ethers.Contract( parent, RootOfTrust.trustedList, legacyProvider );
-		try {
-			rootOfTrust.push( {
-				address: parent,
-				name: await contract.name()
-			} );
-			parent = await contract.parent();
-		} catch( e ) {
-			rootOfTrust.push( {
-				address: parent,
-				name: 'Public Key Directory'
-			} );
-			break;
-		}
-	}
-
-	return rootOfTrust.reverse();
-}
-
-export const verifyRootOfTrust = async( rootOfTrust, issuer ) => {
-	if( rootOfTrust.length <= 0 ) return [];
-	if( rootOfTrust[0].address === '0x5672778D37604b365289c9CcA4dE0aE28365E2Ad' ) return new Array(rootOfTrust.length).fill(true);
-	const validation = ( new Array( rootOfTrust.length ) ).fill( false );
-	const root = new ethers.Contract( rootOfTrust[0].address, RootOfTrust.pkd, legacyProvider );
-	if( ( await root.publicKeys( rootOfTrust[1].address ) ).status <= 0 ) return validation;
-	validation[0] = !!PKDs[rootOfTrust[0].address];
-	if( !validation[0] ) return validation;
-	let index = 1;
-	for( const tl of rootOfTrust.slice( 1 ) ) {
-		const tlContract = new ethers.Contract( tl.address, RootOfTrust.trustedList, legacyProvider );
-		if( index + 2 >= rootOfTrust.length ) {
-			validation[index] = ( await tlContract.entities( issuer.replace( /.*:/, '' ) ) ).status === 1;
-			// TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
-			validation[index + 1] = true;
-			return validation;
-		}
-		if( ( await tlContract.entities( rootOfTrust[index + 1].address ) ).status <= 0 ) return validation;
-		validation[index++] = true;
-	}
-
-	return validation;
-}
-
-export const deriveCredential = async (vc, fields) => {
-	const issuerDocument = await resolve( vc.issuer );
-	const documentLoader = extendContextLoader(uri => {
-		if( uri.startsWith( 'did' ) ) {
-			const document = uri.indexOf('#') >= 0 ? issuerDocument.assertionMethod.find( am => am.publicKeyBase58 ) : issuerDocument;
-			if( uri.indexOf('#') ) {
-				document.id = uri;
-			}
-			return { document };
-		}
-
-		const document = JSONLD_DOCUMENTS[uri];
-		if (!document) {
-			throw new Error( `Unable to load document : ${uri}` );
-		}
-		return {
-			contextUrl: null,
-			document,
-			documentUrl: uri
-		};
-	});
-	const fragment = {
-		"@context": vc['@context'],
-		"type": vc['type'],
-		"credentialSubject": {
-			"type": vc['credentialSubject'].type,
-			"@explicit": true,
-			...fields.filter( field => field !== 'id' && field !== 'type' ).reduce( (dic, field) => ({...dic, [field]: {}}), {} )
-		}
-	};
-	return await deriveProof(vc, fragment, {
-		suite: new BbsBlsSignatureProof2020(),
-		documentLoader
-	});
-}
-
-export const toQRCode = async vc => {
-	const credential = new Buffer( gzip( JSON.stringify(vc, null, 2) ) ).toString( 'base64' );
-	const qrcode = new Encoder();
-	qrcode.setEncodingHint( true );
-	if( vc.hash ){
-		qrcode.write( new QRByte( JSON.stringify({
-			hash: vc.hash,
-			issuanceDate: vc.issuanceDate,
-			expirationDate: vc.expirationDate,
-			subject: vc.credentialSubject.recipient
-		}) ) );
-	} else {
-		qrcode.write( new QRByte( credential ) );
-	}
-	qrcode.make();
-	return qrcode.toDataURL();
-}
-
-export const fromCborQR = async cborQR => {
-	const qrcode = new Decoder();
-	const result = await qrcode.scan( cborQR );
-
-	const unzipped = new Buffer( ungzip( new Buffer( result, 'base64' ) ) ).toString();
-	return JSON.parse( unzipped );
+      managerCandidateKeys: delegationKeys,
+    },
+  };
 };
 
-export const toEUCertificate = vc => {
-	const { name, birthDate, vaccine: { dose, vaccinationDate } } = vc.credentialSubject;
-	const gn = name.substring( 0, name.indexOf( ' ' ) );
-	const fn = name.substring( name.indexOf( ' ' ) + 1 );
-	return {
-		"ver": "1.3.0",
-		"nam": {
-			"fn": fn,
-			"fnt": fn.replace( ' ', '<' ).replace( 'ó', 'o' ).toUpperCase(),
-			"gn": gn,
-			"gnt": gn.replace( ' ', '<' ).toUpperCase()
-		},
-		"dob": moment( birthDate, 'DD-MM-YYYY' ).format( 'YYYY-MM-DD' ),
-		"v": [
-			{
-				"tg": "840539006",
-				"vp": "1119349007",
-				"mp": "EU/1/20/1507",
-				"ma": "ORG-100031184",
-				"dn": dose,
-				"sd": 2,
-				"dt": moment( vaccinationDate ).format( 'YYYY-MM-DD' ),
-				"co": "CL",
-				"is": issuers[vc.issuer].name,
-				"ci": "URN:UVCI:01:CL:DADFCC47C7334E45A906DB12FD859FB7#1"
-			}
-		]
-	}
-}
+export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
+  const emptyResponse = {
+    error: false,
+    message: null,
+    data: {
+      trustTree: [],
+    },
+  };
+  try {
+    // TODO: choose just one proof .. the issuer one
+    const foundProof = proofs.find((proof) => {
+      const vm = proof.verificationMethod; // TODO: catch
+      const did = vm.substring(0, vm.indexOf("#"));
+      return did === issuer;
+    });
+
+    if (!foundProof || !foundProof.domain) {
+      return emptyResponse;
+    }
+    const domain = foundProof.domain;
+    const { error, data } = tryDecodeDomain(domain);
+    if (error) {
+      return emptyResponse;
+    }
+    const {
+      chainOfTrustContractAddress,
+      chainId,
+      publicDirectoryContractAddress,
+    } = data;
+    if (
+      chainOfTrustContractAddress === ethers.constants.AddressZero ||
+      publicDirectoryContractAddress === ethers.constants.AddressZero
+    ) {
+      return emptyResponse;
+    }
+    const vm = foundProof.verificationMethod; // TODO: catch
+    const did = vm.substring(0, vm.indexOf("#"));
+    const chainOfTrustResponse = await getChainOfTrust(
+      chainOfTrustContractAddress,
+      publicDirectoryContractAddress,
+      chainId,
+      did
+    ); // TODO: improve searching, by caching, in case did repeats
+    if (chainOfTrustResponse.error) {
+      return emptyResponse;
+    }
+    return {
+      error: false,
+      message: null,
+      data: {
+        trustTree: chainOfTrustResponse.data.trustTree,
+      },
+    };
+  } catch (e) {
+    const message = "There was an error while verifying against chain of trust";
+    return {
+      error: true,
+      message,
+      data: {},
+    };
+  }
+};
+
+export const getRootOfTrust = async (trustedList, issuerCandidate) => {
+  if (!trustedList) return [];
+  const tlContract = new ethers.Contract(
+    trustedList,
+    RootOfTrust.trustedList,
+    legacyProvider
+  );
+
+  const issuerAddress = issuerCandidate.replace(/.*:/, "");
+  const issuer = await tlContract.entities(issuerAddress);
+  const rootOfTrust = [
+    {
+      address: issuerAddress,
+      name: issuer.name,
+    },
+    {
+      address: trustedList,
+      name: await tlContract.name(),
+    },
+  ];
+  let parent = await tlContract.parent();
+  for (const index of [1, 2, 3, 4, 5, 6]) {
+    const contract = new ethers.Contract(
+      parent,
+      RootOfTrust.trustedList,
+      legacyProvider
+    );
+    try {
+      rootOfTrust.push({
+        address: parent,
+        name: await contract.name(),
+      });
+      parent = await contract.parent();
+    } catch (e) {
+      rootOfTrust.push({
+        address: parent,
+        name: "Public Key Directory",
+      });
+      break;
+    }
+  }
+
+  return rootOfTrust.reverse();
+};
+
+export const verifyRootOfTrust = async (rootOfTrust, issuer) => {
+  if (rootOfTrust.length <= 0) return [];
+  if (rootOfTrust[0].address === "0x5672778D37604b365289c9CcA4dE0aE28365E2Ad")
+    return new Array(rootOfTrust.length).fill(true);
+  const validation = new Array(rootOfTrust.length).fill(false);
+  const root = new ethers.Contract(
+    rootOfTrust[0].address,
+    RootOfTrust.pkd,
+    legacyProvider
+  );
+  if ((await root.publicKeys(rootOfTrust[1].address)).status <= 0)
+    return validation;
+  validation[0] = !!PKDs[rootOfTrust[0].address];
+  if (!validation[0]) return validation;
+  let index = 1;
+  for (const tl of rootOfTrust.slice(1)) {
+    const tlContract = new ethers.Contract(
+      tl.address,
+      RootOfTrust.trustedList,
+      legacyProvider
+    );
+    if (index + 2 >= rootOfTrust.length) {
+      validation[index] =
+        (await tlContract.entities(issuer.replace(/.*:/, ""))).status === 1;
+      // TODO: validate issuer signature (this is the last item of root of trust i.e. the issuer)
+      validation[index + 1] = true;
+      return validation;
+    }
+    if ((await tlContract.entities(rootOfTrust[index + 1].address)).status <= 0)
+      return validation;
+    validation[index++] = true;
+  }
+
+  return validation;
+};
+
+/**
+ * Proof is required since from this argument is attempted to resolve a "domain" which in turn resolves
+ * the public directory and chain of trust under which the issuer of a credential claims the verifiable credential
+ * to be trusted.
+ * @param {any} proofs
+ * @param {string} issuer
+ * @param {string} trustedList
+ * @returns
+ */
+export const resolveRootOfTrust = async (
+  issuer,
+  trustedList,
+  proofs = undefined
+) => {
+  const rotByDomainResponse = await resolveRootOfTrustByDomain(proofs, issuer);
+  if (!rotByDomainResponse.error) {
+    return {
+      error: false,
+      message: null,
+      data: {
+        trustTree: rotByDomainResponse.data.trustTree,
+      },
+    };
+  }
+  try {
+    const rootOfTrust = await getRootOfTrust(trustedList, issuer);
+    const validation = await verifyRootOfTrust(rootOfTrust, issuer);
+    const fullyValidated = rootOfTrust.map((el, index) => {
+      return {
+        address: el.address,
+        name: el.name,
+        valid: validation[index],
+      };
+    });
+    return {
+      error: false,
+      message: null,
+      data: {
+        trustTree: fullyValidated,
+      },
+    };
+  } catch {
+    return {
+      error: true,
+      message: null,
+      data: {},
+    };
+  }
+};
+
+export const deriveCredential = async (vc, fields) => {
+  const issuerDocument = await resolve(vc.issuer);
+  const documentLoader = extendContextLoader((uri) => {
+    if (uri.startsWith("did")) {
+      const document =
+        uri.indexOf("#") >= 0
+          ? issuerDocument.assertionMethod.find((am) => am.publicKeyBase58)
+          : issuerDocument;
+      if (uri.indexOf("#")) {
+        document.id = uri;
+      }
+      return { document };
+    }
+
+    const document = JSONLD_DOCUMENTS[uri];
+    if (!document) {
+      throw new Error(`Unable to load document : ${uri}`);
+    }
+    return {
+      contextUrl: null,
+      document,
+      documentUrl: uri,
+    };
+  });
+  const fragment = {
+    "@context": vc["@context"],
+    type: vc["type"],
+    credentialSubject: {
+      type: vc["credentialSubject"].type,
+      "@explicit": true,
+      ...fields
+        .filter((field) => field !== "id" && field !== "type")
+        .reduce((dic, field) => ({ ...dic, [field]: {} }), {}),
+    },
+  };
+  return await deriveProof(vc, fragment, {
+    suite: new BbsBlsSignatureProof2020(),
+    documentLoader,
+  });
+};
+
+export const toQRCode = async (vc) => {
+  const credential = new Buffer(gzip(JSON.stringify(vc, null, 2))).toString(
+    "base64"
+  );
+  const qrcode = new Encoder();
+  qrcode.setEncodingHint(true);
+  if (vc.hash) {
+    qrcode.write(
+      new QRByte(
+        JSON.stringify({
+          hash: vc.hash,
+          issuanceDate: vc.issuanceDate,
+          expirationDate: vc.expirationDate,
+          subject: vc.credentialSubject.recipient,
+        })
+      )
+    );
+  } else {
+    qrcode.write(new QRByte(credential));
+  }
+  qrcode.make();
+  return qrcode.toDataURL();
+};
+
+export const fromCborQR = async (cborQR) => {
+  const qrcode = new Decoder();
+  const result = await qrcode.scan(cborQR);
+
+  const unzipped = new Buffer(ungzip(new Buffer(result, "base64"))).toString();
+  return JSON.parse(unzipped);
+};
+
+export const toEUCertificate = (vc) => {
+  const {
+    name,
+    birthDate,
+    vaccine: { dose, vaccinationDate },
+  } = vc.credentialSubject;
+  const gn = name.substring(0, name.indexOf(" "));
+  const fn = name.substring(name.indexOf(" ") + 1);
+  return {
+    ver: "1.3.0",
+    nam: {
+      fn: fn,
+      fnt: fn.replace(" ", "<").replace("ó", "o").toUpperCase(),
+      gn: gn,
+      gnt: gn.replace(" ", "<").toUpperCase(),
+    },
+    dob: moment(birthDate, "DD-MM-YYYY").format("YYYY-MM-DD"),
+    v: [
+      {
+        tg: "840539006",
+        vp: "1119349007",
+        mp: "EU/1/20/1507",
+        ma: "ORG-100031184",
+        dn: dose,
+        sd: 2,
+        dt: moment(vaccinationDate).format("YYYY-MM-DD"),
+        co: "CL",
+        is: issuers[vc.issuer].name,
+        ci: "URN:UVCI:01:CL:DADFCC47C7334E45A906DB12FD859FB7#1",
+      },
+    ],
+  };
+};
