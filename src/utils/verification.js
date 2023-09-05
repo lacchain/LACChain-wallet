@@ -12,7 +12,7 @@ import {
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
-import { findDelegationKeys, resolve } from "./did";
+import { filterSecp256k1PublicKeysFromJwkAssertionKeys, findDelegationKeys, resolve } from "./did";
 import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
@@ -23,6 +23,7 @@ import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
 import { tryDecodeDomain } from "./domainType0001";
 import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
 import ChainOfTrustAbi from "./ChainOfTrustAbi.js";
+import canonicalize from "canonicalize";
 
 const JSONLD_DOCUMENTS = {
   "https://w3id.org/security/bbs/v1": bbsContext,
@@ -237,7 +238,7 @@ export const verifyChainId = (chainId) => {
   }
 };
 
-// TODO: implement signature verification
+// TODO: handle errors better
 /**
  * Checks whether the signature associated with the passed proof is correct or not.
  * Verification registry encoded in the "domain" param.
@@ -247,8 +248,8 @@ export const verifyChainId = (chainId) => {
  */
 export const verifyOffChainCredentialSignature = async (vc, proof) => {
   // Validate signature first
-  // Get domain
-  const { error, message, data } = tryDecodeDomain(proof.domain);
+  // TOD; remove this decode domain and replace with a more abstract logic
+  const { error, message } = tryDecodeDomain(proof.domain);
   if (error) {
     return {
       error: true,
@@ -257,27 +258,24 @@ export const verifyOffChainCredentialSignature = async (vc, proof) => {
     };
   }
 
-  const isSupportedChain = verifyChainId(data.chainId);
-  if (isSupportedChain.error) {
-    return {
-      error: true,
-      message: isSupportedChain.message,
-      data: {},
-    };
-  }
-  if (!isSupportedChain.data.isSupported) {
-    return {
-      error: true,
-      message: isSupportedChain.data.message,
-      data: {},
-    };
-  }
-
-  // TODO: verify against verification registry: it is not revoked
+  const v = JSON.parse(JSON.stringify(vc));
+  delete v.proof;
+  const canonizalized = canonicalize(v);
+  const credentialHash = "0x" + crypto.createHash('sha256').update(canonizalized).digest('hex');
+  const signature = proof.proofValue; 
+  const msgHashBytes = ethers.utils.arrayify(credentialHash);
+  const recoveredAddress = ethers.utils.recoverAddress(msgHashBytes, signature);
+  const didDocument = await resolve(vc.issuer);
+  const matchingAssertionKey = filterSecp256k1PublicKeysFromJwkAssertionKeys(
+    didDocument,
+    "JsonWebKey2020"
+  )
+  .map(pubKey => ethers.utils.computeAddress("0x" + Buffer.from(pubKey.publicKeyBuffer).toString('hex')))
+  .find(assertionAddress => assertionAddress === recoveredAddress );
   return {
     error: false,
     data: {
-      issuerSignatureValid: true,
+      issuerSignatureValid: matchingAssertionKey ? true : false,
     },
   };
 };
