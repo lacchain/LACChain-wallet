@@ -3,7 +3,7 @@
 ## Building
 
 ```shell
-REACT_APP_DID_METHOD=lac1 npm build # specify the did method to be used on creating a new did through this application
+REACT_APP_DID_METHOD=lac1 npm run build # specify the did method to be used on creating a new did through this application
 ```
 
 ## Running

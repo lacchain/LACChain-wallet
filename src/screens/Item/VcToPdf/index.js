@@ -360,12 +360,12 @@ const VcToPdf = ({ item }) => {
     family: "Lato",
     fonts: [
       {
-        src: "http://fonts.gstatic.com/s/lato/v11/Upp-ka9rLQmHYCsFgwL-eg.ttf",
+        src: "https://fonts.gstatic.com/s/lato/v11/Upp-ka9rLQmHYCsFgwL-eg.ttf",
         fontWeight: 100, // 100
         fontStyle: "normal",
       },
       {
-        src: "http://fonts.gstatic.com/s/lato/v11/Ja02qOppOVq9jeRjWekbHg.ttf",
+        src: "https://fonts.gstatic.com/s/lato/v11/Ja02qOppOVq9jeRjWekbHg.ttf",
         fontWeight: 300,
         fontStyle: "normal",
       },
