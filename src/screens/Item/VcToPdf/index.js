@@ -1,6 +1,7 @@
 import React from "react";
 import { usePDF } from "@react-pdf/renderer";
 import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
+import { alpha2CountryCodes } from "./countryCodesAlpha2";
 
 export const GetPdfFromCredential = (credential) => {
   return usePDF({
@@ -340,6 +341,16 @@ const VcToPdf = ({ item }) => {
               <Text style={styles.label}>Batch Number / Número de Lote</Text>
               <Text style={styles.text}>
                 {item.credentialSubject.batchNumber}
+              </Text>
+            </View>
+            <View style={styles.elementWrapperHalfRow}>
+              <Text style={styles.label}>
+                Country Of Vaccination / País donde recibe la Vacuna
+              </Text>
+              <Text style={styles.text}>
+                {alpha2CountryCodes.get(
+                  item.credentialSubject.countryOfVaccination
+                )}
               </Text>
             </View>
           </View>
