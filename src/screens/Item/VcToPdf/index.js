@@ -2,6 +2,7 @@ import React from "react";
 import { usePDF } from "@react-pdf/renderer";
 import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
 import { alpha2CountryCodes } from "./countryCodesAlpha2";
+import { toTitleCase } from "../../../utils/misc";
 
 export const GetPdfFromCredential = (credential) => {
   return usePDF({
@@ -240,9 +241,11 @@ const VcToPdf = ({ item }) => {
             </View>
 
             <View style={styles.identificationDataElement}>
-              <Text style={styles.label}>Gender / Género:</Text>
+              <Text style={styles.label}>Sex / Sexo:</Text>
               <Text style={styles.text}>
-                {item.credentialSubject.recipient.gender}
+                {item.credentialSubject.recipient.gender
+                  ? toTitleCase(item.credentialSubject.recipient.gender)
+                  : null}
               </Text>
             </View>
 
