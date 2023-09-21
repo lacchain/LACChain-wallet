@@ -2,6 +2,7 @@ import React from "react";
 import { usePDF } from "@react-pdf/renderer";
 import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
 import { alpha2CountryCodes } from "./countryCodesAlpha2";
+import { VACCINE_LIST } from "./vaccineList";
 import { toTitleCase } from "../../../utils/misc";
 
 export const GetPdfFromCredential = (credential) => {
@@ -319,9 +320,11 @@ const VcToPdf = ({ item }) => {
               <Text style={styles.text}>{item.credentialSubject.order}</Text>
             </View>
             <View style={styles.elementWrapperHalfRow}>
-              <Text style={styles.label}>ATC Code</Text>
+              <Text style={styles.label}>Vaccine Name/Nombre de la Vacuna</Text>
               <Text style={styles.text}>
-                {item.credentialSubject.vaccine.atcCode}
+                {VACCINE_LIST.get(item.credentialSubject.vaccine.atcCode)
+                  ? VACCINE_LIST.get(item.credentialSubject.vaccine.atcCode)
+                  : item.credentialSubject.vaccine.atcCode}
               </Text>
             </View>
             <View style={styles.elementWrapperHalfRow}>
