@@ -279,8 +279,7 @@ const Item = ( { match } ) => {
 
   /**
    * At this point claims is not displayable when type.id = 12 meaning when the verifiable credential is of type 
-   * https://credentials-library.lacchain.net/credentials/health/vaccination/v2 and 
-   * https://credentials-library.lacchain.net/credentials/health/vaccination/v1
+   * https://credentials-library.lacchain.net/credentials/health/vaccination/v3
    * @param {string} link 
    * @param {any} type. See {@link types}
    * @returns boolean indicating whether the passed option must be enabled or not.

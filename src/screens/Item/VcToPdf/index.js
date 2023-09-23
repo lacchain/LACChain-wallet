@@ -1,7 +1,7 @@
 import React from "react";
 import { usePDF } from "@react-pdf/renderer";
 import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
-import { alpha2CountryCodes } from "./countryCodesAlpha2";
+import { alpha3CountryCodes } from "./countryCodesAlpha3";
 import { VACCINE_LIST } from "./vaccineList";
 import { toTitleCase } from "../../../utils/misc";
 
@@ -336,6 +336,12 @@ const VcToPdf = ({ item }) => {
               </Text>
             </View>
             <View style={styles.elementWrapperHalfRow}>
+              <Text style={styles.label}>Next Dose / Siguiente Dosis</Text>
+              <Text style={styles.text}>
+                {item.credentialSubject.nextVaccinationDate}
+              </Text>
+            </View>
+            <View style={styles.elementWrapperHalfRow}>
               <Text style={styles.label}>
                 Vaccination Centre / Centro de Vacunación
               </Text>
@@ -354,7 +360,7 @@ const VcToPdf = ({ item }) => {
                 Country Of Vaccination / País donde recibe la Vacuna
               </Text>
               <Text style={styles.text}>
-                {alpha2CountryCodes.get(
+                {alpha3CountryCodes.get(
                   item.credentialSubject.countryOfVaccination
                 )}
               </Text>

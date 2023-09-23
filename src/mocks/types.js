@@ -150,7 +150,7 @@ export const types = {
 		image: "/images/cards/vc-token-tm.png",
 		image2x: "/images/cards/vc-token-tm.png"
 	},
-	'https://credentials-library.lacchain.net/credentials/health/vaccination/v2': {
+	'https://credentials-library.lacchain.net/credentials/health/vaccination/v3': {
 		id: 12,
 		kind: 'vc',
 		title: "Vaccination Certificate",

@@ -95,9 +95,7 @@ const Actions = ( { className, item, attachment } ) => {
 	});
 
 	const isHealthCredentialType2 = item && typeof(item['@context']) === "object" &&
-	(item["@context"]).find(el => el === "https://www.w3.org/2018/credentials/v1") &&
-	(item["@context"]).find(el => el === "https://w3id.org/vaccination/v1") &&
-	(item["@context"]).find(el => el === "https://credentials-library.lacchain.net/credentials/health/vaccination/v2");
+	(item["@context"]).find(el => el === "https://credentials-library.lacchain.net/credentials/health/vaccination/v3");
 	const isHealthImage = item && item.credentialSubject && 
 	item.credentialSubject.image && item.credentialSubject.image ? item.credentialSubject.image: null;
 	if( isHealthCredentialType2  && isHealthImage) {
