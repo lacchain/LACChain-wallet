@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { ethers } from "ethers";
+import * as ethers from "ethers";
 import { GasModelProvider, GasModelSigner } from "@lacchain/gas-model-provider";
 import { fetchVC } from "./mailbox";
 import ClaimsVerifier from "./ClaimsVerifier";
@@ -62,11 +62,11 @@ export async function syncCredentials( user, update ) {
 }
 
 export async function registerCredential( vc ) {
-	const wallet = new ethers.Wallet();
+	// const wallet = ethers.Wallet.createRandom();
 	// For demo purposes: Creating an on fly issuer
 	const issuer = {
-		address: wallet.address, //'0xe2fc412f96d0c184f2c950cb707fe68b98e0b529',
-		privateKey: wallet.privateKey, // 'b705e4debf0637e11b95d7b2743931b6059bd80cd86823791f248b85a6dfd51c'
+		address: '0xe2fc412f96d0c184f2c950cb707fe68b98e0b529',
+		privateKey: 'b705e4debf0637e11b95d7b2743931b6059bd80cd86823791f248b85a6dfd51c'
 	};
 	let subjectAddress = vc.credentialSubject.id.replace(/.*:/, '');
 	if(!ethers.utils.isAddress(subjectAddress)) {
