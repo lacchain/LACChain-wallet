@@ -92,7 +92,6 @@ export const getPublicDirectoryMember = async (
   const currentTime = Math.floor(Date.now() / 1000);
   if (
     iat === 0 ||
-    expires === false ||
     (expires === true && exp < currentTime)
   ) {
     console.log("INFO:: Member has expired or is no longer valid");
