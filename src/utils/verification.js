@@ -86,8 +86,8 @@ export const getPublicDirectoryMember = async (
   }
   const member = await publicDirectoryContractInstance.getMemberDetails(id);
   const details = member.memberData;
-  const iat = ethers.utils.formatUnits(details.iat, 0);
-  const exp = ethers.utils.formatUnits(details.exp, 0);
+  const iat = parseInt(ethers.utils.formatUnits(details.iat, 0));
+  const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
   const expires = details.expires;
   const currentTime = Math.floor(Date.now() / 1000);
   if (
