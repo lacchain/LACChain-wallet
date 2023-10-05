@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import { Link } from "react-router-dom";
-import styles from "./Card.module.sass";
+import styles from "./CredentialCard.module.sass";
 import { types } from "../../mocks/types";
 import { useAuthContext } from "../../contexts/authContext";
 import { getBalance } from "../../utils/erc20";
@@ -35,15 +35,14 @@ const Card = ( { className, item, onRemove } ) => {
 					break;
 				case 'Tokenized Money':
 					getTokenizedBalance( credential.address ).then( balance => setBalance( balance ) );
+					break;
+				default:
+					console.log('unsupported token type: ' + type.kind);
 			}
-
 		}
 	}, [] );
-	/*if( type.kind === 'vc' ){
-		console.log( credential );
-	}*/
 	return (
-		<div className={cn( styles.card, className )}>
+		<div className={cn( styles.card, className )}>type
 			<Link className={styles.link} to={`/item/${credential.id}`}>
 				<div className={styles.preview}>
 					<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>

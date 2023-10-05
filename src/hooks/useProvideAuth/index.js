@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as ethUtil from "ethereumjs-util";
 import * as sigUtil from "eth-sig-util";
 import { encrypt, decrypt as passwordDecrypt } from "../../utils/crypt";

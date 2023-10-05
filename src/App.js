@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./styles/app.sass";
 import "./styles/global.sass";
 import Page from "./components/Page";
-import Search01 from "./screens/Search01";
+import Search01 from "./screens/CredentialList";
 import Profile from "./screens/Profile";
 import Item from "./screens/Item";
 import Verification from "./screens/Item/verification";
