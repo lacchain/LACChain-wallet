@@ -42,7 +42,7 @@ const Card = ( { className, item, onRemove } ) => {
 		}
 	}, [] );
 	return (
-		<div className={cn( styles.card, className )}>type
+		<div className={cn( styles.card, className )}>
 			<Link className={styles.link} to={`/item/${credential.id}`}>
 				<div className={styles.preview}>
 					<img srcSet={`${type.image2x} 2x`} src={type.image} alt="Card"/>

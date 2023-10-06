@@ -8,7 +8,7 @@ import {
 	verifyCredential,
 	verifyRootOfTrust,
 	verifySignature
-} from "../../utils/verification";
+} from "../../utils/CredentialVerificationUtils";
 import CredentialVerfication from "./Control/CredentialVerfication";
 import Modal from "../../components/Modal";
 import { credentials } from "../../mocks/credentials";

@@ -279,7 +279,14 @@ export const verifyOffChainCredentialSignature = async (vc, proof) => {
   };
 };
 
-export const fullyVerifyCredential = async (vc, proofArray) => {
+// TODO: implement credential exists, isNotRevoked and isNotExpired
+/**
+ * Given a verifiable credential and a set of proofs associated to it, gets the first proof and verifies the VC.
+ * @param {*} vc 
+ * @param {*} proofArray 
+ * @returns 
+ */
+export const type2VerifyCredential = async (vc, proofArray) => {
   if (!proofArray || !Array.isArray(proofArray) || proofArray.length ===0) {
     const message = "Invalid proof array";
     return {
@@ -291,11 +298,11 @@ export const fullyVerifyCredential = async (vc, proofArray) => {
   // TODO: implement a logic to get a proof with some logic
   // TODO: IMPLEMENT!
   const proof = proofArray[0]; // just taking the first element
-  const { error, data, m } = tryDecodeDomain(proof.domain);
+  const { error, data, message } = tryDecodeDomain(proof.domain);
   if (error) {
     return {
       error,
-      message: m,
+      message,
       data: {},
     };
   }
@@ -329,14 +336,21 @@ export const fullyVerifyCredential = async (vc, proofArray) => {
   return {
     error: false,
     data: {
-      issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
+      credentialExists: true,
       isNotRevoked: true,
+      issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
+      additionalSigners: false,
       isNotExpired: true,
     },
   };
 };
 
-export const defaultVerifyCredential = async (vc) => {
+/**
+ * Full onchain Verification according to https://github.com/lacchain/vc-contracts
+ * @param {*} vc 
+ * @returns 
+ */
+export const type1VerifyCredential = async (vc) => {
   const contract = new ethers.Contract(
     vc.proof[0].domain,
     ClaimsVerifier.abi,
@@ -359,6 +373,7 @@ export const defaultVerifyCredential = async (vc) => {
     rsv.r,
     rsv.s
   );
+  
   const credentialExists = result[0];
   const isNotRevoked = result[1];
   const issuerSignatureValid = result[2];
@@ -366,41 +381,53 @@ export const defaultVerifyCredential = async (vc) => {
   const isNotExpired = result[4];
 
   return {
-    credentialExists,
-    isNotRevoked,
-    issuerSignatureValid,
-    additionalSigners,
-    isNotExpired,
+    error: false,
+    message: undefined,
+    data: {
+      credentialExists,
+      isNotRevoked,
+      issuerSignatureValid,
+      additionalSigners,
+      isNotExpired,
+    }
   };
 };
 
 // TODO: validate signer is in the did document
+// TODO: implement credential PoE validation and non onchain revocation
+// TODO: implement non expired verification
+/**
+ * validates the following:
+ * credentialExists: boolean,
+ * isNotRevoked: boolean,
+ * issuerSignatureValid: boolean,
+ * additionalSigners?: boolean,
+ * isNotExpired: boolean,
+ * When "domain" attribute (in the proof) is decodable then "credentialExists" and "isNotRevoked" are onchain validated according to: 
+ * https://github.com/lacchain/LACChain-base-contracts/blob/master/docs/functional/verificationRegistry.md, otherwise all fields are onchain validated
+ * through https://github.com/lacchain/vc-contracts.
+ * @param {*} vc 
+ * @returns 
+ */
 export const verifyCredential = async (vc) => {
-  if (!vc.proof)
+  if (!vc.proof || !vc.proof[0].domain)
     return {
-      credentialExists: true,
-      isNotRevoked: true,
-      issuerSignatureValid: true,
-      additionalSigners: true,
-      isNotExpired: true,
-    };
-  if (!vc.proof[0].domain)
-    return {
-      credentialExists: false,
-      isNotRevoked: false,
-      issuerSignatureValid: false,
-      additionalSigners: false,
-      isNotExpired: false,
+      error: false,
+      message: undefined,
+      data: {
+        credentialExists: false,
+        isNotRevoked: false,
+        issuerSignatureValid: false,
+        additionalSigners: false,
+        isNotExpired: false,
+      }
     };
 
-  const verifyFromDomain = await verifyOffChainCredentialSignature(
-    vc,
-    vc.proof[0]
-  );
-  if (!verifyFromDomain.error) {
-    return verifyFromDomain.data;
+  const type2VerifyCredentialResponse = await type2VerifyCredential(vc, vc.proof);
+  if (!type2VerifyCredentialResponse.error) {
+    return type2VerifyCredentialResponse;
   }
-  return defaultVerifyCredential(vc);
+  return type1VerifyCredential(vc);
 };
 
 export const verifySignature = async (vc, signature) => {
