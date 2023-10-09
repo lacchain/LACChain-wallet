@@ -59,3 +59,22 @@ export function filterSecp256k1PublicKeysFromJwkAssertionKeys(doc, algorithm) {
   }
   return processed;
 }
+
+export function filterP256JwkPublicKeysFromJwkAssertionKeys(doc, algorithm) {
+  const curve = "P-256";
+  const keys = doc.assertionMethod.filter(
+    (ka) =>
+      ka.type === algorithm && ka.publicKeyJwk && ka.publicKeyJwk.crv === curve
+  );
+  if (!keys || keys.length === 0) {
+    return undefined;
+  }
+  const processed = [];
+  for (const key of keys) {
+    processed.push({
+      id: key.id,
+      publicKeyJwk: key.publicKeyJwk,
+    });
+  }
+  return processed;
+}

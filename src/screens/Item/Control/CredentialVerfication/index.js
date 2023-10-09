@@ -83,6 +83,8 @@ export const Wait = ({ className }) => {
   );
 };
 
+// TODO: Improve, when property is not defined it means the system was unable to verify that check so it must be 
+// visually expressed rather than showing as invalid.
 const CredentialVerfication = ({ className, results, typeToRender }) => {
   const steps =
     typeToRender === "type1"

@@ -12,6 +12,7 @@ import {
   resolveRootOfTrust,
   toQRCode,
   type1VerifyCredential,
+  isType2CredentialValidator,
 } from "../../utils/CredentialVerificationUtils";
 import {
   Type1CredentialVerfication,
@@ -50,16 +51,19 @@ const Actions = ({ className, item, attachment }) => {
       action: async () => {
         setVerifying(true);
         setVisibleModalVerification(true);
-        const verificationResponse = await type2VerifyCredential(
-          item,
-          item.proof
-        );
         let verification;
         let isType1Verification = false;
         let isType2Verification = false;
-        if (!verificationResponse.error) {
-          verification = verificationResponse.data;
-          isType2Verification = true;
+        const isType2 = await isType2CredentialValidator(item, item.proof);
+        if (isType2.data && isType2.data.isType2Credential) {
+          const verificationResponse = await type2VerifyCredential(
+            item,
+            item.proof
+          );
+          if (!verificationResponse.error) {
+            verification = verificationResponse.data;
+            isType2Verification = true;
+          }
         } else {
           const verificationResult = await type1VerifyCredential(item);
           if (verificationResult.error) {
@@ -70,6 +74,7 @@ const Actions = ({ className, item, attachment }) => {
           verification = verificationResult.data;
           isType1Verification = true;
         }
+
         // TODO: improve, avoid passing proofs
         const rotResponse = await resolveRootOfTrust(
           item.issuer,

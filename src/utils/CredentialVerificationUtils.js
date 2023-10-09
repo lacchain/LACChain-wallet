@@ -12,7 +12,7 @@ import {
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
-import { filterSecp256k1PublicKeysFromJwkAssertionKeys, findDelegationKeys, resolve } from "./did";
+import { filterP256JwkPublicKeysFromJwkAssertionKeys, findDelegationKeys, resolve } from "./did";
 import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
@@ -48,6 +48,9 @@ export function sha256(data) {
   hashFn.update(data);
   return hashFn.digest("hex");
 }
+
+const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const base58 = require("base-x")(BASE58);
 
 /**
  * Retrieves and returns all data pertaining to an entity whose identifier is `id`
@@ -240,14 +243,15 @@ export const verifyChainId = (chainId) => {
 // TODO: handle errors better
 /**
  * Checks whether the signature associated with the passed proof is correct or not.
- * Verification registry encoded in the "domain" param.
  * @param {any} vc
  * @param {any} proof
  * @returns
  */
 export const verifyOffChainCredentialSignature = async (vc, proof) => {
+  // TODO: Validate according to proof
   // Validate signature first
-  // TOD; remove this decode domain and replace with a more abstract logic
+  // TODO remove this decode domain and replace with a more abstract logic
+  // It is made to verify how to resolve the key is valid for the associated issuer
   const { error, message } = tryDecodeDomain(proof.domain);
   if (error) {
     return {
@@ -256,32 +260,133 @@ export const verifyOffChainCredentialSignature = async (vc, proof) => {
       data: {},
     };
   }
+  // let matchingAssertionKey;
+  try {
+    if (proof.cryptosuite && proof.cryptosuite === "ecdsa-jcs-2019") {
+      const res = await verifyEcdsaJcs2019ProofSignature(vc, proof);
+      return res;
+    }
+    return {
+      error: true,
+      message: "Proof doesn't have 'cryptosuite' property",
+      data: {}
+    }
+  }catch(e) {
+    return {
+      error: true,
+      message: "Error while verifying Signature: " + e.message,
+      data: {},
+    };  
+  }
+};
 
+const verifyEcdsaJcs2019ProofSignature = async (vc, proof) => {
   const v = JSON.parse(JSON.stringify(vc));
   delete v.proof;
-  const canonizalized = canonicalize(v);
-  const credentialHash = "0x" + crypto.createHash('sha256').update(canonizalized).digest('hex');
-  const signature = proof.proofValue; 
-  const msgHashBytes = ethers.utils.arrayify(credentialHash);
-  const recoveredAddress = ethers.utils.recoverAddress(msgHashBytes, signature);
+  const transformedDocument = canonicalize(v);
+  const transformedDocumentHash = crypto
+    .createHash("sha256")
+    .update(transformedDocument)
+    .digest("hex");
+
+  const proofConfig = JSON.parse(JSON.stringify(proof));
+  delete proofConfig.proofValue;
+  const canonicalProofConfig = canonicalize(proofConfig);
+  const proofConfigHash = crypto
+    .createHash("sha256")
+    .update(canonicalProofConfig)
+    .digest("hex");
+
+  const hashData = proofConfigHash.concat(transformedDocumentHash);
+  let proofBytes;
+  try {
+    proofBytes = Buffer.from(base58.decode(proof.proofValue));
+  } catch (e) {
+    return {
+      error: true,
+      message: "Error while decoding proofValue: " + e.message,
+      data: {},
+    };
+  }
+
+  // resolving public key candidates from DidDocument
+  // TODO: validate resolution is made against the right resolver
   const didDocument = await resolve(vc.issuer);
-  const matchingAssertionKey = filterSecp256k1PublicKeysFromJwkAssertionKeys(
+  const matchingAssertionKeys = filterP256JwkPublicKeysFromJwkAssertionKeys(
     didDocument,
     "JsonWebKey2020"
-  )
-  .map(pubKey => ethers.utils.computeAddress("0x" + Buffer.from(pubKey.publicKeyBuffer).toString('hex')))
-  .find(assertionAddress => assertionAddress === recoveredAddress );
+  ).filter((el) => el.id === proof.verificationMethod);
+
+  for (const pubKey of matchingAssertionKeys) {
+    try {
+      const subtle = window.crypto.subtle;
+      const importedKey = await subtle.importKey(
+        "jwk",
+        pubKey.publicKeyJwk,
+        { name: "ECDSA", namedCurve: "P-256" },
+        false,
+        ["verify"]
+      );
+
+      const result = await subtle.verify(
+        { name: "ECDSA", hash: "SHA-256" },
+        importedKey,
+        proofBytes,
+        Buffer.from(hashData, "hex")
+      );
+      if (result === true) {
+        return {
+          error: false,
+          data: {
+            issuerSignatureValid: true,
+          },
+        };
+      }
+    } catch (e) {
+      continue;
+    }
+  }
   return {
-    error: false,
-    data: {
-      issuerSignatureValid: matchingAssertionKey ? true : false,
-    },
+    error: true,
+    message: "Unable to verify ecdsa-jcs-2019 proof",
+    data: {},
   };
 };
+
+export const isType2CredentialValidator = async (vc, proofArray) => {
+  const invalidResponse = {
+    error: false,
+    message: undefined,
+    data: {
+      isType2Credential: false
+    },
+  };
+  if (!proofArray || !Array.isArray(proofArray) || proofArray.length ===0) {
+    return invalidResponse;
+  }
+  const proof = proofArray[0]; // just taking the first element
+  const { error } = tryDecodeDomain(proof.domain);
+  if (error) {
+    return invalidResponse;
+  }
+  const isVersion2 = vc["@context"] && vc["@context"].find(el => el === "https://www.w3.org/ns/credentials/v2");
+  if (!isVersion2) {
+    return invalidResponse;
+  }
+  return {
+    error: false,
+    message: undefined,
+    data: {
+      isType2Credential: true
+    }
+  }
+}
 
 // TODO: implement credential exists, isNotRevoked and isNotExpired
 /**
  * Given a verifiable credential and a set of proofs associated to it, gets the first proof and verifies the VC.
+ * A type 2 credential has: proof with "type" "DataIntegrityProof" (eht only one supported at at this time) and
+ * optionaly a decodable "domain"
  * @param {*} vc 
  * @param {*} proofArray 
  * @returns 
@@ -357,40 +462,54 @@ export const type1VerifyCredential = async (vc) => {
     gasModeProvider
   );
 
-  const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
-  const rsv = ethUtil.fromRpcSig(vc.proof[0].proofValue);
-  const result = await contract.verifyCredential(
-    [
-      vc.issuer.replace(/.*:/, ""),
-      ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
-        ? vc.credentialSubject.id.replace(/.*:/, "")
-        : DIDLac1.decodeDid(vc.credentialSubject.id).address,
-      data,
-      Math.round(moment(vc.issuanceDate).valueOf() / 1000),
-      Math.round(moment(vc.expirationDate).valueOf() / 1000),
-    ],
-    rsv.v,
-    rsv.r,
-    rsv.s
-  );
-  
-  const credentialExists = result[0];
-  const isNotRevoked = result[1];
-  const issuerSignatureValid = result[2];
-  const additionalSigners = result[3];
-  const isNotExpired = result[4];
+  try {
+    const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
+    const rsv = ethUtil.fromRpcSig(vc.proof[0].proofValue);
+    const result = await contract.verifyCredential(
+      [
+        vc.issuer.replace(/.*:/, ""),
+        ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
+          ? vc.credentialSubject.id.replace(/.*:/, "")
+          : DIDLac1.decodeDid(vc.credentialSubject.id).address,
+        data,
+        Math.round(moment(vc.issuanceDate).valueOf() / 1000),
+        Math.round(moment(vc.expirationDate).valueOf() / 1000),
+      ],
+      rsv.v,
+      rsv.r,
+      rsv.s
+    );
+    
+    const credentialExists = result[0];
+    const isNotRevoked = result[1];
+    const issuerSignatureValid = result[2];
+    const additionalSigners = result[3];
+    const isNotExpired = result[4];
 
-  return {
-    error: false,
-    message: undefined,
-    data: {
-      credentialExists,
-      isNotRevoked,
-      issuerSignatureValid,
-      additionalSigners,
-      isNotExpired,
-    }
-  };
+    return {
+      error: false,
+      message: undefined,
+      data: {
+        credentialExists,
+        isNotRevoked,
+        issuerSignatureValid,
+        additionalSigners,
+        isNotExpired,
+      }
+    };
+  }catch(e) {
+    return {
+      error: true,
+      message: "ERROR:: Unable to verify 'type1' credential",
+      data: {
+        credentialExists: false,
+        isNotRevoked: false,
+        issuerSignatureValid: false,
+        additionalSigners: false,
+        isNotExpired: false,
+      }
+    };
+  }
 };
 
 // TODO: validate signer is in the did document
@@ -422,12 +541,22 @@ export const verifyCredential = async (vc) => {
         isNotExpired: false,
       }
     };
-
-  const type2VerifyCredentialResponse = await type2VerifyCredential(vc, vc.proof);
-  if (!type2VerifyCredentialResponse.error) {
-    return type2VerifyCredentialResponse;
+  try {
+    const isType2Credential = await isType2CredentialValidator(vc, vc.proof);
+    if (isType2Credential) {
+      const type2VerifyCredentialResponse = await type2VerifyCredential(vc, vc.proof);
+      return type2VerifyCredentialResponse;
+    }
+    // it it was not type2Credential then just defaulting to type1Credential
+    const t1 = await type1VerifyCredential(vc);
+    return t1;
+  } catch (e) {
+    return {
+      error: true,
+      message: 'Unable to verify credential' + e.message,
+      data: {}
+    }
   }
-  return type1VerifyCredential(vc);
 };
 
 export const verifySignature = async (vc, signature) => {
