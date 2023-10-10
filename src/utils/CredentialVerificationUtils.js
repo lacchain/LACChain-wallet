@@ -24,6 +24,10 @@ import { tryDecodeDomain } from "./domainType0001";
 import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
 import ChainOfTrustAbi from "./ChainOfTrustAbi.js";
 import canonicalize from "canonicalize";
+import VerificationRegistryAbi from "./VerificationRegistryAbi";
+import { isAddress } from "ethers/lib/utils";
+import { isHexString } from "ethjs-util";
+import { Lac1DID } from "@lacchain/did";
 
 const JSONLD_DOCUMENTS = {
   "https://w3id.org/security/bbs/v1": bbsContext,
@@ -51,6 +55,66 @@ export function sha256(data) {
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const base58 = require("base-x")(BASE58);
+
+/**
+ * Only works with Gas Model based contracts.
+ * @param {*} verificationRegistryAddress 
+ */
+export const getDetailsFromVerificationRegistry = async (
+  verificationRegistryAddress,
+  identityAddress,
+  hash
+) => {
+  if (
+    !(
+      isAddress(verificationRegistryAddress) &&
+      isAddress(identityAddress) &&
+      isHexString(hash.startsWith("0x") ? hash : "0x" + hash)
+    )
+  ) {
+    const message = "Invalid params identityAddress/hash";
+    return {
+      error: true,
+      message,
+      data: {},
+    };
+  }
+  const verificationRegistryContractInstance = await new ethers.Contract(
+    verificationRegistryAddress,
+    VerificationRegistryAbi.abi,
+    gasModeProvider
+  );
+  const verificationRegistryVersion =
+    await verificationRegistryContractInstance.version();
+  if (verificationRegistryVersion.toString() !== "1") {
+    const message = "INFO:: Verification Registry Version not supported: ";
+    console.log(message, verificationRegistryVersion);
+    return {
+      error: true,
+      message,
+      data: {},
+    };
+  }
+
+  const details = await verificationRegistryContractInstance.getDetails(
+    identityAddress,
+    hash
+  );
+  const iat = parseInt(ethers.utils.formatUnits(details.iat, 0));
+  const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
+  const onHold = details.onHold ? true : false;
+  const isRevoked = details.isRevoked ? true : false;
+  return {
+    error: false,
+    message: undefined,
+    data: {
+      iat,
+      exp,
+      onHold,
+      isRevoked
+    }
+  }
+};
 
 /**
  * Retrieves and returns all data pertaining to an entity whose identifier is `id`
@@ -280,7 +344,18 @@ export const verifyOffChainCredentialSignature = async (vc, proof) => {
   }
 };
 
-const verifyEcdsaJcs2019ProofSignature = async (vc, proof) => {
+const computeCredentialHash = (vc, proof) => {
+  if (proof && proof.cryptosuite && proof.cryptosuite === "ecdsa-jcs-2019") {
+    return computeEcdsaJcs2019CredentialHash(vc, proof);
+  }
+  return {
+    error: true,
+    message: "Unsupported credential, not able to found suitable hash creation process",
+    data: {}
+  }
+}
+
+const computeEcdsaJcs2019CredentialHash = (vc, proof) => {
   const v = JSON.parse(JSON.stringify(vc));
   delete v.proof;
   const transformedDocument = canonicalize(v);
@@ -298,6 +373,22 @@ const verifyEcdsaJcs2019ProofSignature = async (vc, proof) => {
     .digest("hex");
 
   const hashData = proofConfigHash.concat(transformedDocumentHash);
+  return {
+    error: false,
+    message: undefined,
+    data: {
+      hashData,
+      hashDatDigest: sha256(hashData)
+    }
+  }
+}
+
+const verifyEcdsaJcs2019ProofSignature = async (vc, proof) => {
+  const hashDataResponse = computeEcdsaJcs2019CredentialHash(vc, proof);
+  if (hashDataResponse.error) {
+    return hashDataResponse;
+  }
+  const hashData = hashDataResponse.data.hashData;
   let proofBytes;
   try {
     proofBytes = Buffer.from(base58.decode(proof.proofValue));
@@ -382,26 +473,49 @@ export const isType2CredentialValidator = async (vc, proofArray) => {
   }
 }
 
+export const getDidFromVerificationMethod = (verificationMethod) => {
+  const vmParts = verificationMethod.split("#vm");
+  if (vmParts && vmParts.length > 0) {
+    const didCandidate = vmParts[0];
+    if (didCandidate && didCandidate.startsWith('did:lac1:')) {
+      return {
+        error: false,
+        message: undefined,
+        data: {
+          did: didCandidate
+        }
+      }
+    }
+  }
+
+  return {
+    error: true,
+    message: "Unable to get did from verification method",
+    data: {}
+  }
+}
+
 // TODO: implement credential exists, isNotRevoked and isNotExpired
 /**
  * Given a verifiable credential and a set of proofs associated to it, gets the first proof and verifies the VC.
  * A type 2 credential has: proof with "type" "DataIntegrityProof" (eht only one supported at at this time) and
  * optionaly a decodable "domain"
- * @param {*} vc 
- * @param {*} proofArray 
- * @returns 
+ * @param {*} vc
+ * @param {*} proofArray
+ * @returns
  */
 export const type2VerifyCredential = async (vc, proofArray) => {
-  if (!proofArray || !Array.isArray(proofArray) || proofArray.length ===0) {
+  if (!proofArray || !Array.isArray(proofArray) || proofArray.length === 0) {
     const message = "Invalid proof array";
     return {
       error: true,
       message,
       data: {},
-    }
+    };
   }
   // TODO: implement a logic to get a proof with some logic
   // TODO: IMPLEMENT!
+  ///////////////// for each proof (just taking the first one) ////////////////////////
   const proof = proofArray[0]; // just taking the first element
   const { error, data, message } = tryDecodeDomain(proof.domain);
   if (error) {
@@ -428,24 +542,59 @@ export const type2VerifyCredential = async (vc, proofArray) => {
     };
   }
 
+  // cryptograhic signature verification
   const signatureResponse = await verifyOffChainCredentialSignature(vc, proof);
   if (signatureResponse.error) {
     return {
       error: true,
       message: signatureResponse.message,
-      data: {}
-    }
+      data: {},
+    };
   }
 
-  // TODO: verify against verification registry: it is not revoked
+  // PoE & Revocation Status Check
+  const issuerDidResponse = getDidFromVerificationMethod(
+    proof.verificationMethod
+  );
+  if (issuerDidResponse.error) {
+    return {
+      error: true,
+      message: issuerDidResponse.message,
+      data: {},
+    };
+  }
+  const lac1DidParams = Lac1DID.decodeDid(issuerDidResponse.data.did);
+  const hashDataResponse = computeCredentialHash(vc, proof);
+  if (hashDataResponse.error) {
+    return hashDataResponse;
+  }
+  const hashData = hashDataResponse.data.hashDatDigest;
+  const verificationRegistryDetailsResponse =
+    await getDetailsFromVerificationRegistry(
+      data.verificationRegistryContractAddress,
+      lac1DidParams.address,
+      "0x" + hashData
+    );
+  if (verificationRegistryDetailsResponse.error) {
+    return verificationRegistryDetailsResponse;
+  }
+  // TODO: if on-hold is true the use it in the UI to show the credential is under observation
+  const { iat, exp, isRevoked } = verificationRegistryDetailsResponse.data;
+  const credentialExists = iat > 0;
+  const isNotRevoked = !isRevoked;
+  const isExpired =
+    credentialExists &&
+    exp < Math.floor(new Date().getTime() / 1000) &&
+    exp !== 0;
+  /////////////////////////////////////////////////
   return {
     error: false,
     data: {
-      credentialExists: true,
-      isNotRevoked: true,
+      credentialExists,
+      isNotRevoked,
       issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
       additionalSigners: false,
-      isNotExpired: true,
+      isNotExpired: !isExpired,
     },
   };
 };
@@ -543,7 +692,7 @@ export const verifyCredential = async (vc) => {
     };
   try {
     const isType2Credential = await isType2CredentialValidator(vc, vc.proof);
-    if (isType2Credential) {
+    if (isType2Credential && !isType2Credential.error && isType2Credential.data.isType2Credential) {
       const type2VerifyCredentialResponse = await type2VerifyCredential(vc, vc.proof);
       return type2VerifyCredentialResponse;
     }
@@ -553,7 +702,7 @@ export const verifyCredential = async (vc) => {
   } catch (e) {
     return {
       error: true,
-      message: 'Unable to verify credential' + e.message,
+      message: 'Unable to verify credential: ' + e.message,
       data: {}
     }
   }
