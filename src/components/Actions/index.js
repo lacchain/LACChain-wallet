@@ -8,11 +8,9 @@ import Report from "../Report";
 import Icon from "../Icon";
 import Modal from "../../components/Modal";
 import {
-  type2VerifyCredential,
   resolveRootOfTrust,
   toQRCode,
   type1VerifyCredential,
-  isType2CredentialValidator,
 } from "../../utils/CredentialVerificationUtils";
 import {
   Type1CredentialVerfication,
@@ -20,6 +18,7 @@ import {
   Wait,
 } from "../../screens/Item/Control/CredentialVerfication";
 import Presentation from "../Presentation";
+import { isType2CredentialValidator, type2VerifyCredential } from "../../utils/type2Credential/type2CredentialUtils";
 
 const Actions = ({ className, item, attachment }) => {
   const [visible, setVisible] = useState(false);

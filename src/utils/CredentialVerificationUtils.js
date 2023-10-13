@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { ethers } from "ethers";
 import moment from "moment";
 import * as ethUtil from "ethereumjs-util";
@@ -12,22 +11,24 @@ import {
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
-import { filterP256JwkPublicKeysFromJwkAssertionKeys, findDelegationKeys, resolve } from "./did";
+import { findDelegationKeys, resolve } from "./did";
 import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
 import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
 import educationContext from "./schemas/education.json";
-import { GasModelProvider } from "@lacchain/gas-model-provider";
 import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
 import { tryDecodeDomain } from "./domainType0001";
 import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
 import ChainOfTrustAbi from "./ChainOfTrustAbi.js";
-import canonicalize from "canonicalize";
-import VerificationRegistryAbi from "./VerificationRegistryAbi";
-import { isAddress } from "ethers/lib/utils";
-import { isHexString } from "ethjs-util";
-import { Lac1DID } from "@lacchain/did";
+import { gasModeProvider, legacyProvider } from "../constants/blockchain";
+import { sha256 } from "./cryptoUtils";
+import {
+  isType2CredentialValidator,
+  type2VerifyCredential,
+  verifyChainId,
+} from "./type2Credential/type2CredentialUtils";
+import { SUPPORTED_PUBLIC_DIRECTORY_VERSION } from "../constants/env";
 
 const JSONLD_DOCUMENTS = {
   "https://w3id.org/security/bbs/v1": bbsContext,
@@ -37,83 +38,6 @@ const JSONLD_DOCUMENTS = {
   "https://w3id.org/vaccination/v1": vaccinationContext,
   "https://credentials-library.lacchain.net/credentials/education/v1":
     educationContext,
-};
-
-const gasModeProvider = new GasModelProvider(
-  "https://writer-openprotest.lacnet.com"
-); // TODO: move to env
-const legacyProvider = new ethers.providers.JsonRpcProvider(
-  "https://writer.lacchain.net"
-);
-const supportedChainId = "9e55"; // hex string
-
-export function sha256(data) {
-  const hashFn = crypto.createHash("sha256");
-  hashFn.update(data);
-  return hashFn.digest("hex");
-}
-
-const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-const base58 = require("base-x")(BASE58);
-
-/**
- * Only works with Gas Model based contracts.
- * @param {*} verificationRegistryAddress 
- */
-export const getDetailsFromVerificationRegistry = async (
-  verificationRegistryAddress,
-  identityAddress,
-  hash
-) => {
-  if (
-    !(
-      isAddress(verificationRegistryAddress) &&
-      isAddress(identityAddress) &&
-      isHexString(hash.startsWith("0x") ? hash : "0x" + hash)
-    )
-  ) {
-    const message = "Invalid params identityAddress/hash";
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
-  const verificationRegistryContractInstance = await new ethers.Contract(
-    verificationRegistryAddress,
-    VerificationRegistryAbi.abi,
-    gasModeProvider
-  );
-  const verificationRegistryVersion =
-    await verificationRegistryContractInstance.version();
-  if (verificationRegistryVersion.toString() !== "1") {
-    const message = "INFO:: Verification Registry Version not supported: ";
-    console.log(message, verificationRegistryVersion);
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
-
-  const details = await verificationRegistryContractInstance.getDetails(
-    identityAddress,
-    hash
-  );
-  const iat = parseInt(ethers.utils.formatUnits(details.iat, 0));
-  const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
-  const onHold = details.onHold ? true : false;
-  const isRevoked = details.isRevoked ? true : false;
-  return {
-    error: false,
-    message: undefined,
-    data: {
-      iat,
-      exp,
-      onHold,
-      isRevoked
-    }
-  }
 };
 
 /**
@@ -135,7 +59,9 @@ export const getPublicDirectoryMember = async (
   );
   const publicDirectoryVersion =
     await publicDirectoryContractInstance.version(); //  TODO: catch
-  if (publicDirectoryVersion.toString() !== "1") {
+  if (
+    publicDirectoryVersion.toString() !== SUPPORTED_PUBLIC_DIRECTORY_VERSION
+  ) {
     console.log(
       "INFO:: Public Directory Version not supported: ",
       publicDirectoryVersion
@@ -157,10 +83,7 @@ export const getPublicDirectoryMember = async (
   const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
   const expires = details.expires;
   const currentTime = Math.floor(Date.now() / 1000);
-  if (
-    iat === 0 ||
-    (expires === true && exp < currentTime)
-  ) {
+  if (iat === 0 || (expires === true && exp < currentTime)) {
     console.log("INFO:: Member has expired or is no longer valid");
     return {
       error: false,
@@ -271,553 +194,10 @@ export const getMemberData = async (
   }
 };
 
-export const verifyChainId = (chainId) => {
-  const message = "Unsupported chain";
-  try {
-    if (
-      chainId &&
-      chainId.toLowerCase().replace("0x", "") === supportedChainId
-    ) {
-      return {
-        error: false,
-        message: null,
-        data: {
-          isSupported: true,
-          message: "",
-        },
-      };
-    }
-    return {
-      error: false,
-      message: null,
-      data: {
-        isSupported: false,
-        message,
-      },
-    };
-  } catch (e) {
-    return {
-      error: true,
-      message: "There was a error while trying to validate chainId",
-      data: {},
-    };
-  }
-};
-
-const resolveIssuerFromVerificationMethod = async (verificationMethod) => {
-  try {
-    const did = verificationMethod.substring(0, verificationMethod.indexOf("#"));
-    return {
-      error: false,
-      message: undefined,
-      data: {
-        did,
-      }
-    }
-  } catch (e) {
-    return {
-      error: true,
-      message: "Error resolving issuer from verification method",
-      data: {},
-    }
-  }
-}
-
-const resolvePublicKeyFromVerificationMethod = async (
-  verificationMethod,
-  time = Math.floor(new Date().getTime() / 1000)
-) => {
-  const issuerResult = await resolveIssuerFromVerificationMethod(
-    verificationMethod
-  );
-  if (issuerResult.error) {
-    return {
-      error: true,
-      message:
-        "resolvePublicKeyFromVerificationMethod: " + issuerResult.message,
-      data: {},
-    };
-  }
-  const did = issuerResult.data.did;
-  let matchingAssertionKey;
-  try {
-    const didDocument = await resolve(did);
-    matchingAssertionKey = filterP256JwkPublicKeysFromJwkAssertionKeys(
-      didDocument,
-      "JsonWebKey2020"
-    ).find((el) => el.id === verificationMethod);
-    if (!matchingAssertionKey) {
-      return {
-        error: false,
-        message: undefined,
-        data: {
-          found: false,
-          type: undefined,
-          key: undefined,
-        },
-      };
-    }
-  } catch (e) {
-    const message =
-      "There was an error while trying to public key from didDocument";
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
-  return {
-    error: false,
-    message: undefined,
-    data: {
-      found: true,
-      type: "jwk",
-      key: matchingAssertionKey,
-    },
-  };
-};
-
-const resolveOnchainTimeDetails = async (vc, proof) => {
-  const decodedDomainResult = tryDecodeDomain(proof.domain);
-  if (decodedDomainResult.error) {
-    return {
-      error: true,
-      message: "resolveOnchainTimeDetails: " + decodedDomainResult.message,
-      data: {},
-    };
-  }
-  const { verificationRegistryContractAddress } = decodedDomainResult.data;
-  if (proof && proof.cryptosuite === "ecdsa-jcs-2019") {
-    const ecdsaJcs2019CredentialHashResult = computeEcdsaJcs2019CredentialHash(
-      vc,
-      proof
-    );
-    if (ecdsaJcs2019CredentialHashResult.error) {
-      const message =
-        "Error computing ecdsa JCS2019 credential hash/digest: " +
-        ecdsaJcs2019CredentialHashResult.message;
-      return {
-        error: true,
-        message,
-        data: {},
-      };
-    }
-    const digest = ecdsaJcs2019CredentialHashResult.data.hashDatDigest;
-
-    const issuerResult = await resolveIssuerFromVerificationMethod(
-      proof.verificationMethod
-    );
-    if (issuerResult.error) {
-      return {
-        error: true,
-        message: "resolveOnchainTimeDetails: " + issuerResult.message,
-        data: {},
-      };
-    }
-
-    let issuerAddress;
-    try {
-      issuerAddress = Lac1DID.decodeDid(issuerResult.data.did).address;
-    } catch (e) {
-      return {
-        error: true,
-        message: "resolveOnchainTimeDetails: " + e.message,
-        data: {},
-      };
-    }
-    const vrDetailsResult = await getDetailsFromVerificationRegistry(
-      verificationRegistryContractAddress,
-      issuerAddress,
-      digest
-    );
-    if (vrDetailsResult.error) {
-      return {
-        error: true,
-        message: "resolveOnchainTimeDetails: " + vrDetailsResult.message,
-        data: {},
-      };
-    }
-    const vrDetails = vrDetailsResult.data;
-    const isOnchainExpired =
-      vrDetails.iat > 0 &&
-      vrDetails.exp < Math.floor(new Date().getTime() / 1000);
-    const time = vrDetails.iat;
-    return {
-      error: false,
-      message: undefined,
-      data: {
-        isOnchainExpired,
-        time,
-      },
-    };
-  }
-  return {
-    error: true,
-    message: "unsupported cryptosuite",
-    data: {},
-  };
-};
-// TODO: handle errors better
-/**
- * Checks whether the signature associated with the passed proof is correct or not.
- * @param {any} vc
- * @param {any} proof
- * @returns
- */
-export const validateCredentialSignature = async (vc, proof) => {
-  // resolving public key candidates from DidDocument
-  // TODO: validate resolution is made against the right resolver
-  const isVerificationMethod = proof.verificationMethod;
-  if (!isVerificationMethod) {
-    const message = "verification method not found in proof";
-    return {
-      error: true,
-      message,
-      data: {}
-    }
-  }
-
-  // by defult resolves for time= currentTime
-  let resolvedPublicKeyResponse = await resolvePublicKeyFromVerificationMethod(proof.verificationMethod);
-  if (resolvedPublicKeyResponse.error) {
-    const message = "Error resolving issuer response: " + resolvedPublicKeyResponse.error
-    return {
-      error: true,
-      message,
-      data: {}
-    }
-  }
-  
-  if (!resolvedPublicKeyResponse.data.found) {
-    let time;
-    if (process.env.REACT_APP_THROW_ON_NOT_FOUND_KEY_ERROR) {
-      return {
-        error: false,
-        message: undefined,
-        data: {
-          isValidSignature: false
-        }
-      }
-    } else if (process.env.REACT_APP_BLOCKCHAIN_TYPE1) {
-      const onchainTimeDetailsResult = await resolveOnchainTimeDetails(vc, proof);
-      if (onchainTimeDetailsResult.error) {
-        return {
-          error: true,
-          message: "validateCredentialSignature: " + onchainTimeDetailsResult.error,
-          data: {}
-        }
-      }
-      time = onchainTimeDetailsResult.data.time;
-    } else if (process.env.REACT_APP_CREDENTIAL_PROOF_TIME && proof.created) {
-      try {
-        time = Math.floor((new Date(proof.created).getTime())/1000);
-      } catch(e) {
-        return {
-          error: true,
-          message: "validateCredentialSignature: " + e.message,
-          data: {}
-        }
-      }
-    }
-    if (!time) {
-      return {
-        error: false,
-        message: undefined,
-        data: {
-          isValidSignature: false
-        }
-      }
-    }
-    resolvedPublicKeyResponse = await resolvePublicKeyFromVerificationMethod(proof.verificationMethod, time);
-    if (resolvedPublicKeyResponse.error) {
-      const message = "Error resolving issuer response: " + resolvedPublicKeyResponse.error
-      return {
-        error: true,
-        message,
-        data: {}
-      }
-    }
-    if (!resolvedPublicKeyResponse.data.found) {
-      return {
-        error: false,
-        message: undefined,
-        data: {
-          isValidSignature: false
-        }
-      }
-    }
-  }
-
-  const publicKey = resolvedPublicKeyResponse.data.key;
-  try {
-    if (proof.cryptosuite && proof.cryptosuite === "ecdsa-jcs-2019") {
-      const res = await verifyEcdsaJcs2019ProofSignature(vc, proof, publicKey);
-      return res;
-    }
-    return {
-      error: true,
-      message: "Proof doesn't have 'cryptosuite' property",
-      data: {}
-    }
-  }catch(e) {
-    return {
-      error: true,
-      message: "Error while verifying Signature: " + e.message,
-      data: {},
-    };  
-  }
-};
-
-const computeCredentialHash = (vc, proof) => {
-  if (proof && proof.cryptosuite && proof.cryptosuite === "ecdsa-jcs-2019") {
-    return computeEcdsaJcs2019CredentialHash(vc, proof);
-  }
-  return {
-    error: true,
-    message: "Unsupported credential, not able to found suitable hash creation process",
-    data: {}
-  }
-}
-
-const computeEcdsaJcs2019CredentialHash = (vc, proof) => {
-  const v = JSON.parse(JSON.stringify(vc));
-  delete v.proof;
-  const transformedDocument = canonicalize(v);
-  const transformedDocumentHash = crypto
-    .createHash("sha256")
-    .update(transformedDocument)
-    .digest("hex");
-
-  const proofConfig = JSON.parse(JSON.stringify(proof));
-  delete proofConfig.proofValue;
-  const canonicalProofConfig = canonicalize(proofConfig);
-  const proofConfigHash = crypto
-    .createHash("sha256")
-    .update(canonicalProofConfig)
-    .digest("hex");
-
-  const hashData = proofConfigHash.concat(transformedDocumentHash);
-  return {
-    error: false,
-    message: undefined,
-    data: {
-      hashData,
-      hashDatDigest: sha256(hashData)
-    }
-  }
-}
-
-const verifyEcdsaJcs2019ProofSignature = async (vc, proof, publicKey) => {
-  const hashDataResponse = computeEcdsaJcs2019CredentialHash(vc, proof);
-  if (hashDataResponse.error) {
-    return hashDataResponse;
-  }
-  const hashData = hashDataResponse.data.hashData;
-  let proofBytes;
-  try {
-    proofBytes = Buffer.from(base58.decode(proof.proofValue));
-  } catch (e) {
-    return {
-      error: true,
-      message: "Error while decoding proofValue: " + e.message,
-      data: {},
-    };
-  }
-
-  try {
-    const subtle = window.crypto.subtle;
-    const importedKey = await subtle.importKey(
-      "jwk",
-      publicKey.publicKeyJwk,
-      { name: "ECDSA", namedCurve: "P-256" },
-      false,
-      ["verify"]
-    );
-
-    const result = await subtle.verify(
-      { name: "ECDSA", hash: "SHA-256" },
-      importedKey,
-      proofBytes,
-      Buffer.from(hashData, "hex")
-    );
-    if (result === true) {
-      return {
-        error: false,
-        data: {
-          issuerSignatureValid: true,
-        },
-      };
-    }
-  } catch (e) {
-    return {
-      error: true,
-      message: "Unable to verify ecdsa-jcs-2019 proof",
-      data: {},
-    }; 
-  }
-};
-
-export const isType2CredentialValidator = async (vc, proofArray) => {
-  const invalidResponse = {
-    error: false,
-    message: undefined,
-    data: {
-      isType2Credential: false
-    },
-  };
-  if (!proofArray || !Array.isArray(proofArray) || proofArray.length ===0) {
-    return invalidResponse;
-  }
-  const proof = proofArray[0]; // just taking the first element
-  const { error } = tryDecodeDomain(proof.domain);
-  if (error) {
-    return invalidResponse;
-  }
-  const isVersion2 = vc["@context"] && vc["@context"].find(el => el === "https://www.w3.org/ns/credentials/v2");
-  if (!isVersion2) {
-    return invalidResponse;
-  }
-  return {
-    error: false,
-    message: undefined,
-    data: {
-      isType2Credential: true
-    }
-  }
-}
-
-export const getDidFromVerificationMethod = (verificationMethod) => {
-  const vmParts = verificationMethod.split("#vm");
-  if (vmParts && vmParts.length > 0) {
-    const didCandidate = vmParts[0];
-    if (didCandidate && didCandidate.startsWith('did:lac1:')) {
-      return {
-        error: false,
-        message: undefined,
-        data: {
-          did: didCandidate
-        }
-      }
-    }
-  }
-
-  return {
-    error: true,
-    message: "Unable to get did from verification method",
-    data: {}
-  }
-}
-
-// TODO: implement credential exists, isNotRevoked and isNotExpired
-/**
- * Given a verifiable credential and a set of proofs associated to it, gets the first proof and verifies the VC.
- * A type 2 credential has: proof with "type" "DataIntegrityProof" (eht only one supported at at this time) and
- * optionaly a decodable "domain"
- * @param {*} vc
- * @param {*} proofArray
- * @returns
- */
-export const type2VerifyCredential = async (vc, proofArray) => {
-  if (!proofArray || !Array.isArray(proofArray) || proofArray.length === 0) {
-    const message = "Invalid proof array";
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
-  const r = await resolveProof(vc, proofArray[0]);
-  return r;
-};
-
-export const resolveProof = async (vc, proof) => {
-  ///////////////// for each proof (just taking the first one) ////////////////////////
-  const { error, data, message } = tryDecodeDomain(proof.domain);
-  if (error) {
-    return {
-      error,
-      message,
-      data: {},
-    };
-  }
-
-  const isSupportedChain = verifyChainId(data.chainId);
-  if (isSupportedChain.error) {
-    return {
-      error: true,
-      message: isSupportedChain.message,
-      data: {},
-    };
-  }
-  if (!isSupportedChain.data.isSupported) {
-    return {
-      error: true,
-      message: isSupportedChain.data.message,
-      data: {},
-    };
-  }
-
-  // cryptograhic signature verification
-  const signatureResponse = await validateCredentialSignature(vc, proof);
-  if (signatureResponse.error) {
-    return {
-      error: true,
-      message: signatureResponse.message,
-      data: {},
-    };
-  }
-
-  // PoE & Revocation Status Check
-  const issuerDidResponse = getDidFromVerificationMethod(
-    proof.verificationMethod
-  );
-  if (issuerDidResponse.error) {
-    return {
-      error: true,
-      message: issuerDidResponse.message,
-      data: {},
-    };
-  }
-  const lac1DidParams = Lac1DID.decodeDid(issuerDidResponse.data.did);
-  const hashDataResponse = computeCredentialHash(vc, proof);
-  if (hashDataResponse.error) {
-    return hashDataResponse;
-  }
-  const hashData = hashDataResponse.data.hashDatDigest;
-  const verificationRegistryDetailsResponse =
-    await getDetailsFromVerificationRegistry(
-      data.verificationRegistryContractAddress,
-      lac1DidParams.address,
-      "0x" + hashData
-    );
-  if (verificationRegistryDetailsResponse.error) {
-    return verificationRegistryDetailsResponse;
-  }
-  // TODO: if on-hold is true the use it in the UI to show the credential is under observation
-  const { iat, exp, isRevoked } = verificationRegistryDetailsResponse.data;
-  const credentialExists = iat > 0;
-  const isNotRevoked = !isRevoked;
-  const isExpired =
-    credentialExists &&
-    exp < Math.floor(new Date().getTime() / 1000) &&
-    exp !== 0;
-  /////////////////////////////////////////////////
-  return {
-    error: false,
-    data: {
-      credentialExists,
-      isNotRevoked,
-      issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
-      additionalSigners: false,
-      isNotExpired: !isExpired,
-    },
-  };
-}
-
 /**
  * Full onchain Verification according to https://github.com/lacchain/vc-contracts
- * @param {*} vc 
- * @returns 
+ * @param {*} vc
+ * @returns
  */
 export const type1VerifyCredential = async (vc) => {
   const contract = new ethers.Contract(
@@ -843,7 +223,7 @@ export const type1VerifyCredential = async (vc) => {
       rsv.r,
       rsv.s
     );
-    
+
     const credentialExists = result[0];
     const isNotRevoked = result[1];
     const issuerSignatureValid = result[2];
@@ -859,9 +239,9 @@ export const type1VerifyCredential = async (vc) => {
         issuerSignatureValid,
         additionalSigners,
         isNotExpired,
-      }
+      },
     };
-  }catch(e) {
+  } catch (e) {
     return {
       error: true,
       message: "ERROR:: Unable to verify 'type1' credential",
@@ -871,7 +251,7 @@ export const type1VerifyCredential = async (vc) => {
         issuerSignatureValid: false,
         additionalSigners: false,
         isNotExpired: false,
-      }
+      },
     };
   }
 };
@@ -886,11 +266,11 @@ export const type1VerifyCredential = async (vc) => {
  * issuerSignatureValid: boolean,
  * additionalSigners?: boolean,
  * isNotExpired: boolean,
- * When "domain" attribute (in the proof) is decodable then "credentialExists" and "isNotRevoked" are onchain validated according to: 
+ * When "domain" attribute (in the proof) is decodable then "credentialExists" and "isNotRevoked" are onchain validated according to:
  * https://github.com/lacchain/LACChain-base-contracts/blob/master/docs/functional/verificationRegistry.md, otherwise all fields are onchain validated
  * through https://github.com/lacchain/vc-contracts.
- * @param {*} vc 
- * @returns 
+ * @param {*} vc
+ * @returns
  */
 export const verifyCredential = async (vc) => {
   if (!vc.proof || !vc.proof[0].domain)
@@ -903,12 +283,19 @@ export const verifyCredential = async (vc) => {
         issuerSignatureValid: false,
         additionalSigners: false,
         isNotExpired: false,
-      }
+      },
     };
   try {
     const isType2Credential = await isType2CredentialValidator(vc, vc.proof);
-    if (isType2Credential && !isType2Credential.error && isType2Credential.data.isType2Credential) {
-      const type2VerifyCredentialResponse = await type2VerifyCredential(vc, vc.proof);
+    if (
+      isType2Credential &&
+      !isType2Credential.error &&
+      isType2Credential.data.isType2Credential
+    ) {
+      const type2VerifyCredentialResponse = await type2VerifyCredential(
+        vc,
+        vc.proof
+      );
       return type2VerifyCredentialResponse;
     }
     // it it was not type2Credential then just defaulting to type1Credential
@@ -917,9 +304,9 @@ export const verifyCredential = async (vc) => {
   } catch (e) {
     return {
       error: true,
-      message: 'Unable to verify credential: ' + e.message,
-      data: {}
-    }
+      message: "Unable to verify credential: " + e.message,
+      data: {},
+    };
   }
 };
 
