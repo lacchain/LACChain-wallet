@@ -10,7 +10,12 @@ import VerificationRegistryAbi from "../VerificationRegistryAbi";
 import { gasModeProvider } from "../../constants/blockchain";
 import { filterP256JwkPublicKeysFromJwkAssertionKeys, resolve } from "../did";
 import { sha256 } from "../cryptoUtils";
-import { SUPPORTED_CHAIN_ID } from "../../constants/env";
+import {
+  BLOCKCHAIN_TYPE1_POE,
+  CREDENTIAL_PROOF_TIME,
+  SUPPORTED_CHAIN_ID,
+  THROW_ON_NOT_FOUND_KEY_ERROR,
+} from "../../constants/env";
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const base58 = require("base-x")(BASE58);
@@ -68,32 +73,6 @@ export const isType2CredentialValidator = async (vc, proofArray) => {
 };
 
 export const resolveProof = async (vc, proof) => {
-  ///////////////// for each proof (just taking the first one) ////////////////////////
-  const { error, data, message } = tryDecodeDomain(proof.domain);
-  if (error) {
-    return {
-      error,
-      message,
-      data: {},
-    };
-  }
-
-  const isSupportedChain = verifyChainId(data.chainId);
-  if (isSupportedChain.error) {
-    return {
-      error: true,
-      message: isSupportedChain.message,
-      data: {},
-    };
-  }
-  if (!isSupportedChain.data.isSupported) {
-    return {
-      error: true,
-      message: isSupportedChain.data.message,
-      data: {},
-    };
-  }
-
   // cryptograhic signature verification
   const signatureResponse = await validateCredentialSignature(vc, proof);
   if (signatureResponse.error) {
@@ -104,45 +83,34 @@ export const resolveProof = async (vc, proof) => {
     };
   }
 
-  // PoE & Revocation Status Check
-  const issuerDidResponse = getDidFromVerificationMethod(
-    proof.verificationMethod
-  );
-  if (issuerDidResponse.error) {
+  // Revocation Status Check
+  const credentialStatusResult = await resolveCredentialStatus(vc, proof);
+  if (credentialStatusResult.error) {
     return {
       error: true,
-      message: issuerDidResponse.message,
+      message: "resolveProof" + credentialStatusResult.message,
       data: {},
     };
   }
-  const lac1DidParams = Lac1DID.decodeDid(issuerDidResponse.data.did);
-  const hashDataResponse = computeCredentialHash(vc, proof);
-  if (hashDataResponse.error) {
-    return hashDataResponse;
+  const isNotRevoked = !credentialStatusResult.data.isRevoked;
+
+  // PoE
+  const credentialExpirationResult = await verifyCredentialExpiration(
+    vc,
+    proof
+  );
+  if (credentialExpirationResult.error) {
+    return {
+      error: true,
+      message: "resolveProof: " + credentialExpirationResult.message,
+      data: {},
+    };
   }
-  const hashData = hashDataResponse.data.hashDatDigest;
-  const verificationRegistryDetailsResponse =
-    await getDetailsFromVerificationRegistry(
-      data.verificationRegistryContractAddress,
-      lac1DidParams.address,
-      "0x" + hashData
-    );
-  if (verificationRegistryDetailsResponse.error) {
-    return verificationRegistryDetailsResponse;
-  }
-  // TODO: if on-hold is true the use it in the UI to show the credential is under observation
-  const { iat, exp, isRevoked } = verificationRegistryDetailsResponse.data;
-  const credentialExists = iat > 0;
-  const isNotRevoked = !isRevoked;
-  const isExpired =
-    credentialExists &&
-    exp < Math.floor(new Date().getTime() / 1000) &&
-    exp !== 0;
-  /////////////////////////////////////////////////
+  const { onchainExists, isExpired } = credentialExpirationResult.data;
   return {
     error: false,
     data: {
-      credentialExists,
+      credentialExists: onchainExists,
       isNotRevoked,
       issuerSignatureValid: signatureResponse.data.issuerSignatureValid,
       additionalSigners: false,
@@ -151,6 +119,125 @@ export const resolveProof = async (vc, proof) => {
   };
 };
 
+export const resolveCredentialStatus = async (vc, proof) => {
+  const { error, data, message } = tryDecodeDomain(proof.domain);
+  if (error) {
+    return {
+      error,
+      message,
+      data: {},
+    };
+  }
+  const hashDataResponse = computeCredentialHash(vc, proof);
+  if (hashDataResponse.error) {
+    return hashDataResponse;
+  }
+  const hashData = hashDataResponse.data.hashDatDigest;
+
+  const issuerResult = await resolveIssuerDetailsFromVerificationMethod(
+    proof.verificationMethod
+  );
+  if (issuerResult.error) {
+    return {
+      error: true,
+      message: "resolveCredentialStatus: " + issuerResult.message,
+      data: {},
+    };
+  }
+
+  if (issuerResult.data.type !== "lac1") {
+    return {
+      error: true,
+      message:
+        "resolveCredentialStatus: Unsupported issuer type: " +
+        issuerResult.data.type,
+      data: {},
+    };
+  }
+  const issuerAddress = issuerResult.data.details.address;
+  const verificationRegistryDetailsResponse =
+    await getDetailsFromVerificationRegistry(
+      data.verificationRegistryContractAddress,
+      issuerAddress,
+      "0x" + hashData
+    );
+  if (verificationRegistryDetailsResponse.error) {
+    return verificationRegistryDetailsResponse;
+  }
+  // TODO: if on-hold is true the use it in the UI to show the credential is under observation
+  const { isRevoked, onHold } = verificationRegistryDetailsResponse.data;
+  return {
+    error: false,
+    message: undefined,
+    data: {
+      isRevoked,
+      onHold,
+    },
+  };
+};
+
+export const verifyCredentialExpiration = async (vc, proof) => {
+  const onchainTimeDetailsResult = await resolveOnchainTimeDetails(vc, proof);
+  let isExpired = true;
+  let onchainExists = false;
+  if (onchainTimeDetailsResult.error) {
+    if (BLOCKCHAIN_TYPE1_POE) {
+      return {
+        error: true,
+        message:
+          "verifyCredentialExpiration: " + onchainTimeDetailsResult.error,
+        data: {},
+      };
+    }
+    if (proof && proof.expires) {
+      try {
+        const proofExpirationTime = Math.floor(
+          new Date(proof.expires).getTime() / 1000
+        );
+        isExpired =
+          proofExpirationTime < Math.floor(new Date().getTime() / 1000);
+      } catch (e) {
+        return {
+          error: true,
+          message: "Invalid 'expires' attribute value found in proof",
+          data: {},
+        };
+      }
+    } else {
+      isExpired = false;
+    }
+  } else {
+    const time = onchainTimeDetailsResult.data.time;
+    const exp = onchainTimeDetailsResult.data.exp;
+    onchainExists = time > 0;
+    if (proof && proof.expires) {
+      try {
+        const proofExpirationTime = Math.floor(
+          new Date(proof.expires).getTime() / 1000
+        );
+        const expirationTime =
+          exp < proofExpirationTime && exp > 0 ? exp : proofExpirationTime; // omits non-expiring case when am expiration date is set in the proof
+        isExpired = expirationTime < Math.floor(new Date().getTime() / 1000);
+      } catch (e) {
+        return {
+          error: true,
+          message: "Invalid 'expires' attribute value found in proof",
+          data: {},
+        };
+      }
+    } else {
+      isExpired = exp > 0 && time < Math.floor(new Date().getTime() / 1000);
+    }
+  }
+  return {
+    error: false,
+    message: undefined,
+    data: {
+      isExpired,
+      onchainExists,
+    },
+  };
+};
 // TODO: handle errors better
 /**
  * Checks whether the signature associated with the passed proof is correct or not.
@@ -187,7 +274,7 @@ export const validateCredentialSignature = async (vc, proof) => {
 
   if (!resolvedPublicKeyResponse.data.found) {
     let time;
-    if (process.env.REACT_APP_THROW_ON_NOT_FOUND_KEY_ERROR) {
+    if (THROW_ON_NOT_FOUND_KEY_ERROR) {
       return {
         error: false,
         message: undefined,
@@ -195,7 +282,7 @@ export const validateCredentialSignature = async (vc, proof) => {
           isValidSignature: false,
         },
       };
-    } else if (process.env.REACT_APP_BLOCKCHAIN_TYPE1) {
+    } else if (BLOCKCHAIN_TYPE1_POE) {
       const onchainTimeDetailsResult = await resolveOnchainTimeDetails(
         vc,
         proof
@@ -209,7 +296,7 @@ export const validateCredentialSignature = async (vc, proof) => {
         };
       }
       time = onchainTimeDetailsResult.data.time;
-    } else if (process.env.REACT_APP_CREDENTIAL_PROOF_TIME && proof.created) {
+    } else if (CREDENTIAL_PROOF_TIME && proof.created) {
       try {
         time = Math.floor(new Date(proof.created).getTime() / 1000);
       } catch (e) {
@@ -424,9 +511,9 @@ const resolveOnchainTimeDetails = async (vc, proof) => {
         data: {},
       };
     }
-    const digest = ecdsaJcs2019CredentialHashResult.data.hashDatDigest;
+    const digest = "0x" + ecdsaJcs2019CredentialHashResult.data.hashDatDigest;
 
-    const issuerResult = await resolveIssuerFromVerificationMethod(
+    const issuerResult = await resolveIssuerDetailsFromVerificationMethod(
       proof.verificationMethod
     );
     if (issuerResult.error) {
@@ -437,16 +524,14 @@ const resolveOnchainTimeDetails = async (vc, proof) => {
       };
     }
 
-    let issuerAddress;
-    try {
-      issuerAddress = Lac1DID.decodeDid(issuerResult.data.did).address;
-    } catch (e) {
+    if (issuerResult.data.type !== "lac1") {
       return {
         error: true,
-        message: "resolveOnchainTimeDetails: " + e.message,
+        message: "Unsupported issuer type: " + issuerResult.data.type,
         data: {},
       };
     }
+    const issuerAddress = issuerResult.data.details.address;
     const vrDetailsResult = await getDetailsFromVerificationRegistry(
       verificationRegistryContractAddress,
       issuerAddress,
@@ -464,12 +549,14 @@ const resolveOnchainTimeDetails = async (vc, proof) => {
       vrDetails.iat > 0 &&
       vrDetails.exp < Math.floor(new Date().getTime() / 1000);
     const time = vrDetails.iat;
+    const exp = vrDetails.exp;
     return {
       error: false,
       message: undefined,
       data: {
         isOnchainExpired,
         time,
+        exp,
       },
     };
   }
@@ -575,6 +662,40 @@ const resolveIssuerFromVerificationMethod = async (verificationMethod) => {
     return {
       error: true,
       message: "Error resolving issuer from verification method",
+      data: {},
+    };
+  }
+};
+
+const resolveIssuerDetailsFromVerificationMethod = async (
+  verificationMethod
+) => {
+  const issuerResult = await resolveIssuerFromVerificationMethod(
+    verificationMethod
+  );
+  if (issuerResult.error) {
+    return {
+      error: true,
+      message:
+        "resolveIssuerDetailsFromVerificationMethod: " + issuerResult.message,
+      data: {},
+    };
+  }
+
+  try {
+    const issuer = Lac1DID.decodeDid(issuerResult.data.did);
+    return {
+      error: false,
+      message: undefined,
+      data: {
+        type: "lac1",
+        details: issuer,
+      },
+    };
+  } catch (e) {
+    return {
+      error: true,
+      message: "resolveIssuerDetailsFromVerificationMethod: " + e.message,
       data: {},
     };
   }
