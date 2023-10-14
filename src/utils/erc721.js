@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import axios from "axios";
+import { LEGACY_PROVIDER_PRC_URL } from "../constants/env";
 
 const abi = [
 	// Read-Only Functions
@@ -15,7 +16,7 @@ const abi = [
 ];
 
 export async function getInfo( address, id ) {
-	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( LEGACY_PROVIDER_PRC_URL ) );
 	const totalSupply = await token.totalSupply().catch( () => 0 )
 	const uri = await token.tokenURI( id );
 	const resource = await axios.get( uri ).then( result => result.data );
@@ -31,12 +32,12 @@ export async function getInfo( address, id ) {
 }
 
 export async function getBalance( address, account, tokenId ) {
-	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) );
+	const token = new ethers.Contract( address, abi, new ethers.providers.JsonRpcProvider( LEGACY_PROVIDER_PRC_URL ) );
 	const owner = await token.ownerOf( tokenId );
 	return owner.toLowerCase() === account.toLowerCase() ? 1 : 0;
 }
 
 export async function sendTokens( address, from, privateKey, receiver, tokenId ) {
-	const token = new ethers.Contract( address, abi, new ethers.Wallet( privateKey, new ethers.providers.JsonRpcProvider( "https://writer.lacchain.net" ) ) );
+	const token = new ethers.Contract( address, abi, new ethers.Wallet( privateKey, new ethers.providers.JsonRpcProvider( LEGACY_PROVIDER_PRC_URL ) ) );
 	return await token.transferFrom( from.replace(/.*:/, ''), receiver.replace(/.*:/, ''), tokenId );
 }

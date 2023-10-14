@@ -3,9 +3,9 @@ import axios from "axios";
 import { createJWT, ES256KSigner } from "did-jwt";
 import DIDCommService from "./didcomm";
 import { ec as EC } from 'elliptic'
+import { MAILBOX_DID, MAILBOX_SERVICE } from "../constants/env";
 
 const didCommService = new DIDCommService();
-const MAILBOX_DID = "did:lac:openprotest:0xf33bc23691245c2d5de99d7d45e9fdd113495870";
 
 export async function fetchVC( user ) {
 	const secp256k1 = new EC('secp256k1')
@@ -22,7 +22,7 @@ export async function fetchVC( user ) {
 
 	console.log(user.encryptionKeyPair);
 
-	const result = await axios.get( 'https://mailbox.openprotest.lacnet.com/vc', { headers: { token } } );
+	const result = await axios.get( `${MAILBOX_SERVICE}/vc`, { headers: { token } } );
 	const credentials = await Promise.all( result.data.map( vc => didCommService.decrypt( vc, user.encryptionKeyPair ) ) );
 	console.log(credentials.map( c => JSON.parse(c.message) ));
 	return credentials.filter( c => c.message );
@@ -49,5 +49,5 @@ export async function sendVC( user, recipient, message ) {
 		}
 	}
 	const encryptedToMailbox = await didCommService.encrypt( envelope, user.encryptionKeyPair, MAILBOX_DID, false );
-	return await axios.post( 'https://mailbox.openprotest.lacnet.com/vc', encryptedToMailbox, { headers: { token } } );
+	return await axios.post( `${MAILBOX_SERVICE}/vc`, encryptedToMailbox, { headers: { token } } );
 }

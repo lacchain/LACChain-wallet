@@ -7,13 +7,12 @@ import Modal from "../../../components/Modal";
 import { FacebookShareButton, TwitterShareButton } from "react-share";
 import { useAuthContext } from "../../../contexts/authContext";
 import { formatDID, formatUser } from "../../../utils/format";
-// import { isStepDivisible } from "react-range/lib/utils";
+import { MAILBOX_SERVICE } from "../../../constants/env";
 
 const shareUrlFacebook = "https://ui8.net";
 const shareUrlTwitter = "https://ui8.net";
 
 const User = ( { className } ) => {
-	const [visible, setVisible] = useState( false );
 	const [visibleShare, setVisibleShare] = useState( false );
 	const [visibleModalReport, setVisibleModalReport] = useState( false );
 
@@ -37,12 +36,12 @@ const User = ( { className } ) => {
 				</div>
 				<a
 					className={styles.site}
-					href="https://mailbox.openprotest.lacnet.com"
+					href={MAILBOX_SERVICE}
 					target="_blank"
 					rel="noopener noreferrer"
 				>
 					<Icon name="globe" size="16"/>
-					<span>https://mailbox.openprotest.lacnet.com</span>
+					<span>{MAILBOX_SERVICE}</span>
 				</a>
 
 				<div className={styles.control}>

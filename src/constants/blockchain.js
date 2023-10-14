@@ -1,10 +1,6 @@
 import { GasModelProvider } from "@lacchain/gas-model-provider";
 import { ethers } from "ethers";
-import {
-  LEGACY_PROVIDER_PRC_URL,
-  OPENPROTEST_PROVIDER_PRC_URL,
-  SUPPORTED_CHAIN_ID,
-} from "./env";
+import { LEGACY_PROVIDER_PRC_URL, RPC_URL, SUPPORTED_CHAIN_ID } from "./env";
 export const gasModelProvider = (chainId = SUPPORTED_CHAIN_ID) => {
   const isSupportedChain = verifyChainId(chainId);
   if (isSupportedChain.error) {
@@ -25,7 +21,7 @@ export const gasModelProvider = (chainId = SUPPORTED_CHAIN_ID) => {
     error: false,
     message: undefined,
     data: {
-      provider: new GasModelProvider(OPENPROTEST_PROVIDER_PRC_URL),
+      provider: new GasModelProvider(RPC_URL),
     },
   };
 }; // TODO: move to env

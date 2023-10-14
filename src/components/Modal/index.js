@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import OutsideClickHandler from "react-outside-click-handler";
 import cn from "classnames";
 import styles from "./Modal.module.sass";
