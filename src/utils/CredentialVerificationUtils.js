@@ -11,24 +11,20 @@ import {
 } from "@mattrglobal/jsonld-signatures-bbs";
 import { extendContextLoader } from "jsonld-signatures";
 import { issuers, PKDs } from "../mocks/issuers";
-import { findDelegationKeys, resolve } from "./did";
 import bbsContext from "./schemas/bbs.json";
 import credentialContext from "./schemas/credentialsContext.json";
 import trustedContext from "./schemas/trusted.json";
 import vaccinationContext from "./schemas/vaccinationCertificateContext.json";
 import educationContext from "./schemas/education.json";
 import DIDLac1 from "@lacchain/did/lib/lac1/lac1Did";
-import { tryDecodeDomain } from "./domainType0001";
-import PublicDirectoryAbi from "./PublicDirectoryAbi.js";
-import ChainOfTrustAbi from "./ChainOfTrustAbi.js";
-import { gasModeProvider, legacyProvider } from "../constants/blockchain";
+import { gasModelProvider, legacyProvider } from "../constants/blockchain";
 import { sha256 } from "./cryptoUtils";
 import {
   isType2CredentialValidator,
   type2VerifyCredential,
-  verifyChainId,
 } from "./type2Credential/type2CredentialUtils";
-import { SUPPORTED_PUBLIC_DIRECTORY_VERSION } from "../constants/env";
+import { resolveRootOfTrustByDomain } from "./type2Credential/rootOfTrust";
+import { resolve } from "./did";
 
 const JSONLD_DOCUMENTS = {
   "https://w3id.org/security/bbs/v1": bbsContext,
@@ -38,222 +34,6 @@ const JSONLD_DOCUMENTS = {
   "https://w3id.org/vaccination/v1": vaccinationContext,
   "https://credentials-library.lacchain.net/credentials/education/v1":
     educationContext,
-};
-
-/**
- * Retrieves and returns all data pertaining to an entity whose identifier is `id`
- * @param {string} chainId
- * @param {string} publicDirectoryContractAddress
- * @param {string} id - e.g. a decentralized identifier (did)
- * @returns
- */
-export const getPublicDirectoryMember = async (
-  publicDirectoryContractAddress,
-  id
-) => {
-  // TODO: check against a list of registered PDs by this application
-  const publicDirectoryContractInstance = new ethers.Contract(
-    publicDirectoryContractAddress,
-    PublicDirectoryAbi.abi,
-    gasModeProvider
-  );
-  const publicDirectoryVersion =
-    await publicDirectoryContractInstance.version(); //  TODO: catch
-  if (
-    publicDirectoryVersion.toString() !== SUPPORTED_PUBLIC_DIRECTORY_VERSION
-  ) {
-    console.log(
-      "INFO:: Public Directory Version not supported: ",
-      publicDirectoryVersion
-    );
-    return {
-      error: true,
-      data: {},
-    };
-  }
-  if (!id) {
-    return {
-      error: true,
-      data: {},
-    };
-  }
-  const member = await publicDirectoryContractInstance.getMemberDetails(id);
-  const details = member.memberData;
-  const iat = parseInt(ethers.utils.formatUnits(details.iat, 0));
-  const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
-  const expires = details.expires;
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (iat === 0 || (expires === true && exp < currentTime)) {
-    console.log("INFO:: Member has expired or is no longer valid");
-    return {
-      error: false,
-      data: {
-        isMember: false,
-      },
-    };
-  }
-
-  const lastBlockChange = parseInt(
-    ethers.utils.formatUnits(member.lastBlockChange, 0)
-  );
-  // TODO: resolve member data from last block change
-  const memberData = await getMemberData(
-    lastBlockChange,
-    id,
-    publicDirectoryContractAddress
-  );
-  if (memberData.error) {
-    return {
-      error: true,
-      data: {},
-    };
-  }
-  const memberIdentificationDetails = memberData.data;
-  const legalName =
-    memberIdentificationDetails &&
-    memberIdentificationDetails.identificationData &&
-    memberIdentificationDetails.identificationData.legalName
-      ? memberIdentificationDetails.identificationData.legalName
-      : null;
-  const alpha3CountryCode =
-    memberIdentificationDetails &&
-    memberIdentificationDetails.identificationData &&
-    memberIdentificationDetails.identificationData.countryCode
-      ? memberIdentificationDetails.identificationDatacountryCode
-      : null;
-  return {
-    error: false,
-    data: {
-      isMember: true,
-      legalName,
-      alpha3CountryCode,
-    },
-  };
-};
-
-// TODO: conclude logic for iterating over events
-/**
- * Iteratively checks moving backwards until finding all data related to the entity being queried for.
- * @param {string} blockNumber : Last block where changes took place
- * @param {string} id - E.g. a decentralized identifier (did)
- * @param {string} publicDirectoryContractAddress - Contract address pertaining to the Public Directory to query against.
- * @returns
- */
-export const getMemberData = async (
-  blockNumber,
-  id,
-  publicDirectoryContractAddress
-) => {
-  try {
-    const publicDirectoryContractInstance = new ethers.Contract(
-      publicDirectoryContractAddress,
-      PublicDirectoryAbi.abi,
-      gasModeProvider
-    );
-
-    const data = await publicDirectoryContractInstance.queryFilter(
-      "MemberChanged",
-      blockNumber,
-      blockNumber
-    );
-    const found = data.find(
-      (log) =>
-        log.address.toLocaleLowerCase() ===
-        publicDirectoryContractAddress.toLocaleLowerCase()
-    );
-    if (!found) {
-      return {
-        error: false,
-        message: null,
-        data: {
-          isRaw: null,
-        },
-      };
-    }
-    const rawData = found.args.rawData;
-    const decodedFromHex = Buffer.from(
-      rawData.replace("0x", ""),
-      "hex"
-    ).toString();
-    const parsedData = JSON.parse(decodedFromHex);
-    // TODO: define association between type and version better in regards to a certain public directory metaclass
-    return {
-      error: false,
-      message: null,
-      data: parsedData,
-    };
-  } catch (err) {
-    const message =
-      "There was an error while retrieving data for the member being queried";
-    console.log("Error::", message, err);
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
-};
-
-/**
- * Full onchain Verification according to https://github.com/lacchain/vc-contracts
- * @param {*} vc
- * @returns
- */
-export const type1VerifyCredential = async (vc) => {
-  const contract = new ethers.Contract(
-    vc.proof[0].domain,
-    ClaimsVerifier.abi,
-    gasModeProvider
-  );
-
-  try {
-    const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
-    const rsv = ethUtil.fromRpcSig(vc.proof[0].proofValue);
-    const result = await contract.verifyCredential(
-      [
-        vc.issuer.replace(/.*:/, ""),
-        ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
-          ? vc.credentialSubject.id.replace(/.*:/, "")
-          : DIDLac1.decodeDid(vc.credentialSubject.id).address,
-        data,
-        Math.round(moment(vc.issuanceDate).valueOf() / 1000),
-        Math.round(moment(vc.expirationDate).valueOf() / 1000),
-      ],
-      rsv.v,
-      rsv.r,
-      rsv.s
-    );
-
-    const credentialExists = result[0];
-    const isNotRevoked = result[1];
-    const issuerSignatureValid = result[2];
-    const additionalSigners = result[3];
-    const isNotExpired = result[4];
-
-    return {
-      error: false,
-      message: undefined,
-      data: {
-        credentialExists,
-        isNotRevoked,
-        issuerSignatureValid,
-        additionalSigners,
-        isNotExpired,
-      },
-    };
-  } catch (e) {
-    return {
-      error: true,
-      message: "ERROR:: Unable to verify 'type1' credential",
-      data: {
-        credentialExists: false,
-        isNotRevoked: false,
-        issuerSignatureValid: false,
-        additionalSigners: false,
-        isNotExpired: false,
-      },
-    };
-  }
 };
 
 // TODO: validate signer is in the did document
@@ -310,6 +90,56 @@ export const verifyCredential = async (vc) => {
   }
 };
 
+/**
+ * Proof is required since from this argument is attempted to resolve a "domain" which in turn resolves
+ * the public directory and chain of trust under which the issuer of a credential claims the verifiable credential
+ * to be trusted.
+ * @param {any} proofs
+ * @param {string} issuer
+ * @param {string} trustedList
+ * @returns
+ */
+export const resolveRootOfTrust = async (
+  issuer,
+  trustedList,
+  proofs = undefined
+) => {
+  const rotByDomainResponse = await resolveRootOfTrustByDomain(proofs, issuer);
+  if (!rotByDomainResponse.error) {
+    return {
+      error: false,
+      message: null,
+      data: {
+        trustTree: rotByDomainResponse.data.trustTree,
+      },
+    };
+  }
+  try {
+    const rootOfTrust = await getRootOfTrust(trustedList, issuer);
+    const validation = await verifyRootOfTrust(rootOfTrust, issuer);
+    const fullyValidated = rootOfTrust.map((el, index) => {
+      return {
+        address: el.address,
+        name: el.name,
+        valid: validation[index],
+      };
+    });
+    return {
+      error: false,
+      message: null,
+      data: {
+        trustTree: fullyValidated,
+      },
+    };
+  } catch {
+    return {
+      error: true,
+      message: null,
+      data: {},
+    };
+  }
+};
+
 export const verifySignature = async (vc, signature) => {
   const contract = new ethers.Contract(
     vc.proof[0].domain,
@@ -331,218 +161,6 @@ export const verifySignature = async (vc, signature) => {
     ],
     signature
   );
-};
-
-/**
- * Starting from a did and an a chain of trust contract address, iterates
- * over did-document to find a delegation key that checked against the chain of trust
- * can return true.
- * @param {string} chainOfTrustContractAddress
- * @param {string} publicDirectoryContractAddress
- * @param {string} chainId - hex string of the chain Id
- * @param {string} id - Typically a decentralized identifier (did)
- */
-export const getChainOfTrust = async (
-  chainOfTrustContractAddress,
-  publicDirectoryContractAddress,
-  chainId,
-  id
-) => {
-  const isSupportedChain = verifyChainId(chainId);
-  if (isSupportedChain.error) {
-    return {
-      error: true,
-      message: isSupportedChain.message,
-      data: {},
-    };
-  }
-  if (!isSupportedChain.data.isSupported) {
-    return {
-      error: true,
-      message: isSupportedChain.data.message,
-      data: {},
-    };
-  }
-
-  const chainOfTrustContractInstance = new ethers.Contract(
-    chainOfTrustContractAddress,
-    ChainOfTrustAbi.abi,
-    gasModeProvider
-  ); // TODO: implement
-  const candidateManagersResponse = await getManagersCandidates(id);
-  if (candidateManagersResponse.error) {
-    return {
-      error: true,
-      message: candidateManagersResponse.message,
-      data: {},
-    };
-  }
-  const candidateManagers = candidateManagersResponse.data.managerCandidateKeys;
-  const reversedTrustTree = [];
-  // loop through the candidates
-  for (const managerCandidate of candidateManagers) {
-    // TODO: handle external call
-    const response =
-      await chainOfTrustContractInstance.getMemberDetailsByEntityManager(
-        managerCandidate
-      );
-    const memberId = parseInt(ethers.utils.formatUnits(response.gId, 0));
-    const pdMemberResponse = await getPublicDirectoryMember(
-      publicDirectoryContractAddress,
-      id
-    );
-    let name;
-    if (
-      pdMemberResponse.error ||
-      !pdMemberResponse.data.isMember ||
-      !pdMemberResponse.data.legalName
-    ) {
-      name = "Unknown";
-    }
-    name = pdMemberResponse.data.legalName;
-    if (memberId > 0 && response.isValid) {
-      const trustElement = {
-        valid: response.isValid ? true : false,
-        address: response.did,
-        name,
-      };
-      reversedTrustTree.push(trustElement);
-      let trustedBy = response.trustedBy;
-      let iter = 0;
-      while (trustedBy && iter < 4) {
-        // limiting since it is not optimized to make multiple calls
-        console.log("INFO:: Getting Root; teration #", iter + 2);
-        const r =
-          await chainOfTrustContractInstance.getMemberDetailsByEntityManager(
-            trustedBy
-          );
-        if (!r.isValid) {
-          break;
-        }
-        const pdMemberResponse = await getPublicDirectoryMember(
-          publicDirectoryContractAddress,
-          r.did
-        );
-        let name = null; //"Unknown";
-        if (
-          !pdMemberResponse.error &&
-          pdMemberResponse.data.isMember &&
-          pdMemberResponse.data.legalName
-        ) {
-          name = pdMemberResponse.data.legalName;
-        }
-        const trustElement = {
-          valid: true,
-          address: r.did,
-          name,
-        };
-        reversedTrustTree.push(trustElement);
-        if (r.trustedBy === ethers.constants.AddressZero) break;
-        trustedBy = r.trustedBy;
-        iter++;
-      }
-      break;
-    }
-  }
-
-  // TODO: get full chain of trust
-  return {
-    error: false,
-    message: null,
-    data: {
-      trustTree: reversedTrustTree.reverse(),
-    },
-  };
-};
-
-/**
- * Gets delegation keys of type "EcdsaSecp256k1RecoveryMethod2020" and whose value is an ethereum address (BlockchainAccountId)
- * @notice As an improvement the usage of a multicall contract will allow handling many delegation keys at once.
- * @param {*} did
- * @returns - An array of candidate keys to be the managers. e.g. ['0x123...', '0xf45a2e...']
- */
-export const getManagersCandidates = async (did) => {
-  const didDocument = await resolve(did);
-  const delegationKeys = findDelegationKeys(
-    didDocument,
-    "EcdsaSecp256k1RecoveryMethod2020"
-  ).map((delegationKey) => "0x" + Buffer.from(delegationKey).toString("hex"));
-  if (delegationKeys.length > 5) {
-    return {
-      error: true,
-      message: "Too many delegation keys to process",
-    };
-  }
-  return {
-    error: false,
-    message: null,
-    data: {
-      managerCandidateKeys: delegationKeys,
-    },
-  };
-};
-
-export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
-  const emptyResponse = {
-    error: false,
-    message: null,
-    data: {
-      trustTree: [],
-    },
-  };
-  try {
-    // TODO: choose just one proof .. the issuer one
-    const foundProof = proofs.find((proof) => {
-      const vm = proof.verificationMethod; // TODO: catch
-      const did = vm.substring(0, vm.indexOf("#"));
-      return did === issuer;
-    });
-
-    if (!foundProof || !foundProof.domain) {
-      return emptyResponse;
-    }
-    const domain = foundProof.domain;
-    const { error, data } = tryDecodeDomain(domain);
-    if (error) {
-      return emptyResponse;
-    }
-    const {
-      chainOfTrustContractAddress,
-      chainId,
-      publicDirectoryContractAddress,
-    } = data;
-    if (
-      chainOfTrustContractAddress === ethers.constants.AddressZero ||
-      publicDirectoryContractAddress === ethers.constants.AddressZero
-    ) {
-      return emptyResponse;
-    }
-    const vm = foundProof.verificationMethod; // TODO: catch
-    const did = vm.substring(0, vm.indexOf("#"));
-    const chainOfTrustResponse = await getChainOfTrust(
-      chainOfTrustContractAddress,
-      publicDirectoryContractAddress,
-      chainId,
-      did
-    ); // TODO: improve searching, by caching, in case did repeats
-    if (chainOfTrustResponse.error) {
-      return emptyResponse;
-    }
-    return {
-      error: false,
-      message: null,
-      data: {
-        trustTree: chainOfTrustResponse.data.trustTree,
-      },
-    };
-  } catch (e) {
-    const message = "There was an error while verifying against chain of trust";
-    return {
-      error: true,
-      message,
-      data: {},
-    };
-  }
 };
 
 export const getRootOfTrust = async (trustedList, issuerCandidate) => {
@@ -627,51 +245,63 @@ export const verifyRootOfTrust = async (rootOfTrust, issuer) => {
 };
 
 /**
- * Proof is required since from this argument is attempted to resolve a "domain" which in turn resolves
- * the public directory and chain of trust under which the issuer of a credential claims the verifiable credential
- * to be trusted.
- * @param {any} proofs
- * @param {string} issuer
- * @param {string} trustedList
+ * Full onchain Verification according to https://github.com/lacchain/vc-contracts
+ * @param {*} vc
  * @returns
  */
-export const resolveRootOfTrust = async (
-  issuer,
-  trustedList,
-  proofs = undefined
-) => {
-  const rotByDomainResponse = await resolveRootOfTrustByDomain(proofs, issuer);
-  if (!rotByDomainResponse.error) {
-    return {
-      error: false,
-      message: null,
-      data: {
-        trustTree: rotByDomainResponse.data.trustTree,
-      },
-    };
-  }
+export const type1VerifyCredential = async (vc) => {
+  const contract = new ethers.Contract(
+    vc.proof[0].domain,
+    ClaimsVerifier.abi,
+    gasModelProvider().data.provider
+  );
+
   try {
-    const rootOfTrust = await getRootOfTrust(trustedList, issuer);
-    const validation = await verifyRootOfTrust(rootOfTrust, issuer);
-    const fullyValidated = rootOfTrust.map((el, index) => {
-      return {
-        address: el.address,
-        name: el.name,
-        valid: validation[index],
-      };
-    });
+    const data = `0x${sha256(JSON.stringify(vc.credentialSubject))}`;
+    const rsv = ethUtil.fromRpcSig(vc.proof[0].proofValue);
+    const result = await contract.verifyCredential(
+      [
+        vc.issuer.replace(/.*:/, ""),
+        ethers.utils.isAddress(vc.credentialSubject.id.replace(/.*:/, ""))
+          ? vc.credentialSubject.id.replace(/.*:/, "")
+          : DIDLac1.decodeDid(vc.credentialSubject.id).address,
+        data,
+        Math.round(moment(vc.issuanceDate).valueOf() / 1000),
+        Math.round(moment(vc.expirationDate).valueOf() / 1000),
+      ],
+      rsv.v,
+      rsv.r,
+      rsv.s
+    );
+
+    const credentialExists = result[0];
+    const isNotRevoked = result[1];
+    const issuerSignatureValid = result[2];
+    const additionalSigners = result[3];
+    const isNotExpired = result[4];
+
     return {
       error: false,
-      message: null,
+      message: undefined,
       data: {
-        trustTree: fullyValidated,
+        credentialExists,
+        isNotRevoked,
+        issuerSignatureValid,
+        additionalSigners,
+        isNotExpired,
       },
     };
-  } catch {
+  } catch (e) {
     return {
       error: true,
-      message: null,
-      data: {},
+      message: "ERROR:: Unable to verify 'type1' credential",
+      data: {
+        credentialExists: false,
+        isNotRevoked: false,
+        issuerSignatureValid: false,
+        additionalSigners: false,
+        isNotExpired: false,
+      },
     };
   }
 };

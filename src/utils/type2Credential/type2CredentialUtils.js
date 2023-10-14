@@ -7,13 +7,12 @@ import canonicalize from "canonicalize";
 import { Lac1DID } from "@lacchain/did";
 import { tryDecodeDomain } from "../domainType0001";
 import VerificationRegistryAbi from "../VerificationRegistryAbi";
-import { gasModeProvider } from "../../constants/blockchain";
+import { gasModelProvider } from "../../constants/blockchain";
 import { filterP256JwkPublicKeysFromJwkAssertionKeys, resolve } from "../did";
 import { sha256 } from "../cryptoUtils";
 import {
   BLOCKCHAIN_TYPE1_POE,
   CREDENTIAL_PROOF_TIME,
-  SUPPORTED_CHAIN_ID,
   THROW_ON_NOT_FOUND_KEY_ERROR,
 } from "../../constants/env";
 
@@ -395,10 +394,18 @@ export const getDetailsFromVerificationRegistry = async (
       data: {},
     };
   }
+  const providerResponse = gasModelProvider();
+  if (providerResponse.error) {
+    return {
+      error: true,
+      message: providerResponse.message,
+      data: {},
+    };
+  }
   const verificationRegistryContractInstance = new ethers.Contract(
     verificationRegistryAddress,
     VerificationRegistryAbi.abi,
-    gasModeProvider
+    providerResponse.data.provider
   );
   const verificationRegistryVersion =
     await verificationRegistryContractInstance.version();
@@ -696,39 +703,6 @@ const resolveIssuerDetailsFromVerificationMethod = async (
     return {
       error: true,
       message: "resolveIssuerDetailsFromVerificationMethod: " + e.message,
-      data: {},
-    };
-  }
-};
-
-export const verifyChainId = (chainId) => {
-  const message = "Unsupported chain";
-  try {
-    if (
-      chainId &&
-      chainId.toLowerCase().replace("0x", "") === SUPPORTED_CHAIN_ID
-    ) {
-      return {
-        error: false,
-        message: null,
-        data: {
-          isSupported: true,
-          message: "",
-        },
-      };
-    }
-    return {
-      error: false,
-      message: null,
-      data: {
-        isSupported: false,
-        message,
-      },
-    };
-  } catch (e) {
-    return {
-      error: true,
-      message: "There was a error while trying to validate chainId",
       data: {},
     };
   }

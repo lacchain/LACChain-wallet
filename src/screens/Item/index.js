@@ -8,9 +8,7 @@ import { types } from "../../mocks/types";
 import { issuers } from "../../mocks/issuers";
 import Raw from "./Raw";
 import {
-  getPublicDirectoryMember,
   getRootOfTrust,
-  resolveRootOfTrustByDomain,
   toEUCertificate,
   verifyCredential,
   verifyRootOfTrust,
@@ -28,6 +26,8 @@ import {
 } from "./VcToPdf";
 import { Document, Page } from "react-pdf/dist/entry.webpack";
 import { tryDecodeDomain } from "../../utils/domainType0001";
+import { getPublicDirectoryMember } from "../../utils/type2Credential/PublicDirectory";
+import { resolveRootOfTrustByDomain } from "../../utils/type2Credential/rootOfTrust";
 
 const navLinks = [
   { name: "Claims", index: 0 },
@@ -57,9 +57,11 @@ async function resolveIssuer(did, domain = undefined) {
   }
   const member = await getPublicDirectoryMember(
     data.publicDirectoryContractAddress,
-    did
+    did,
+    data.chainId
   ); // TODO: data: appear as error on hovering
   if (member.error || !member.data.isMember) {
+    console.log("resolveIssuer: " + member.message);
     return issuers.unknown; // TODO: handle view with error
   }
 
@@ -111,7 +113,7 @@ async function verifyCredentialAndResolveIssuer(credential) {
       valid:
         did === credential.issuer
           ? verification.issuerSignatureValid
-          : await verifySignature(credential, proof.proofValue),
+          : await verifySignature(credential, proof.proofValue),// TODO: improve
       domain: proof.domain ? proof.domain : null,
       verificationMethod: proof.verificationMethod
         ? proof.verificationMethod
