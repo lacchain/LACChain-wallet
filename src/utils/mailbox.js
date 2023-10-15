@@ -40,7 +40,7 @@ export async function sendVC( user, recipient, message ) {
 	const envelope = {
 		"type": "https://didcomm.org/routing/2.0/forward",
 		"to": [MAILBOX_DID],
-		"expires_time": 1516385931,
+		"expires_time": 1516385931, // TODO: improve
 		"body": {
 			"next": recipient,
 			"payloads~attach": [

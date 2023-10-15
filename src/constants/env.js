@@ -1,4 +1,4 @@
-export const SUPPORTED_CHAIN_ID = "9e55";
+export const SUPPORTED_CHAIN_ID = "0x9e55c";
 export const LEGACY_PROVIDER_PRC_URL = "https://writer.lacchain.net";
 export const RPC_URL = "https://writer-openprotest.lacnet.com";
 export const NODE_ADDRESS = "0xad730de8c4bfc3d845f7ce851bcf2ea17c049585";
@@ -15,3 +15,24 @@ export const LAC1_CHAIN_ID = 648540;
 export const MAILBOX_SERVICE = "https://mailbox.openprotest.lacnet.com";
 export const MAILBOX_DID =
   "did:lac:openprotest:0xf33bc23691245c2d5de99d7d45e9fdd113495870";
+export const DEFAULT_PUBLIC_DIRECTORY_CONTRACT_ADDRESS =
+  "0xbBbfDe862725186E3D5332618a5546e60fcB75e6";
+export const PUBLIC_DIRECTORY_CONTRACT_ADDRESS = (() => {
+  return ["0xbBbfDe862725186E3D5332618a5546e60fcB75e6"];
+})();
+
+export const DEFAULT_CHAIN_OF_TRUST_CONTRACT_ADDRESS =
+  "0xFE7CEF0D8E9A1dab4C4F57154e0191d67D4803AF";
+export const CHAIN_OF_TRUST_CONTRACT_ADDRESS = (() => {
+  return ["0xFE7CEF0D8E9A1dab4C4F57154e0191d67D4803AF"];
+})();
+
+export const DEFAULT_VERIFICATION_REGISTRY_CONTRACT_ADDRESS =
+  "0x64CaA0fC7E0C1f051078da9525A31D00dB1F50eE";
+
+export const VERIFICATION_REGISTRY_CONTRACT_ADDRESS = (() => {
+  return ["0x64CaA0fC7E0C1f051078da9525A31D00dB1F50eE"];
+})();
+
+export const DOMAIN_TYPE = "0001";
+export const DOMAIN_VERSION = "0001";

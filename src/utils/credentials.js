@@ -10,6 +10,12 @@ import * as ethUtil from "ethereumjs-util";
 import moment from "moment";
 import { Lac1DID } from "@lacchain/did";
 import { NODE_ADDRESS, RPC_URL } from "../constants/env";
+import {
+  encodeDomain,
+  getUtcDate,
+  registerType2Credential,
+} from "./type2Credential/credentialCreator";
+import { createMockedIssuer } from "./type2Credential/mock/mockIssuer";
 
 const CLAIMS_VERIFIER_CONTRACT_ADDRESS =
   "0x352b396727F883589ff827C53b25762605C1Cc71";
@@ -87,7 +93,52 @@ export async function syncCredentials(user, update) {
   return user.credentials;
 }
 
-export async function registerCredential(vc) {
+export async function registerCredentialMock(vc, type = "type-1") {
+  if (type === "type-2") {
+    const mockedIssuerResponse = await createMockedIssuer();
+    if (mockedIssuerResponse.error) {
+      console.log("registerCredentialMock: " + mockedIssuerResponse.message);
+      return {
+        error: true,
+        message: mockedIssuerResponse.error,
+        data: {},
+      };
+    }
+    vc.issuer = mockedIssuerResponse.data.did;
+    const domain = encodeDomain();
+    const proofConfig = {
+      type: "DataIntegrityProof",
+      proofPurpose: "assertionMethod",
+      verificationMethod: mockedIssuerResponse.data.did.concat("#vm-0"),
+      // TODO: improve
+      domain,
+      cryptosuite: "ecdsa-jcs-2019",
+      created: getUtcDate(),
+    };
+    const registerType2CredentialResponse = await registerType2Credential(
+      vc,
+      proofConfig,
+      mockedIssuerResponse.data.signingKey
+    );
+    if (registerType2CredentialResponse.error) {
+      console.log(
+        "registerCredentialMock" + registerType2CredentialResponse.error
+      );
+      return {
+        error: true,
+        message: registerType2CredentialResponse.message,
+        data: {},
+      };
+    }
+    return {
+      vc: registerType2CredentialResponse.data.verifiableCredential,
+      tx: "",
+    };
+  }
+  return registerType1CredentialMock(vc);
+}
+
+export async function registerType1CredentialMock(vc) {
   // const wallet = ethers.Wallet.createRandom();
   // For demo purposes: Creating an on fly issuer
   const issuer = {
@@ -102,7 +153,7 @@ export async function registerCredential(vc) {
 
   const provider = new GasModelProvider(RPC_URL);
   const nodeAddress = NODE_ADDRESS;
-  const expiration = 1736394529;
+  const expiration = Math.floor(new Date().getTime() / 1000) + 3600 * 24 * 5;
   const signer = new GasModelSigner(
     issuer.privateKey,
     provider,

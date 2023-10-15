@@ -34,7 +34,8 @@ export const verifyChainId = (chainId) => {
   try {
     if (
       chainId &&
-      chainId.toLowerCase().replace("0x", "") === SUPPORTED_CHAIN_ID
+      chainId.toLowerCase().replace("0x", "") ===
+        SUPPORTED_CHAIN_ID.toLowerCase().replace("0x", "")
     ) {
       return {
         error: false,

@@ -10,7 +10,7 @@ import { generateKeyPair } from "../../utils/did";
 import { DID, Lac1DID } from "@lacchain/did";
 import { createKeyPair } from "@lacchain/did/lib/utils";
 import { sendVC } from "../../utils/mailbox";
-import { registerCredential } from "../../utils/credentials";
+import { registerCredentialMock } from "../../utils/credentials";
 import { useAuthContext } from "../../contexts/authContext";
 import { Link, Redirect } from "react-router-dom";
 import LoaderCircle from "../../components/LoaderCircle";
@@ -100,25 +100,25 @@ const Register = ({ history }) => {
       encryptionKeyPair,
     };
 
+    // TODO: create on fly issuer
     setStep(3);
-    const identityVC = await registerCredential({
+    const vc = {
       "@context": [
-        "https://www.w3.org/2018/credentials/v1",
-        "https://credentials-library.lacchain.net/credentials/identity/v1",
+        "https://www.w3.org/ns/credentials/v2",
+        "https://credentials-library.lacchain.net/credentials/identity/v2",
       ],
       id: uuid.uuid(),
       type: ["VerifiableCredential", "IdentityCard"],
-      issuer: "did:lac:openprotest:0xe2fc412f96d0c184f2c950cb707fe68b98e0b529",
-      issuanceDate: moment().toISOString(),
-      expirationDate: moment().add(2, "years").toISOString(),
+      validFrom: moment().toISOString(),
+      validUntil: moment().add(2, "years").toISOString(),
       credentialSubject: {
         id: did.id,
         givenName: firstName,
         familyName: familyName,
-        lastName: lastName,
         email: email,
       },
-    });
+    };
+    const identityVC = await registerCredentialMock(vc, "type-2");
     setStep(4);
     await sendVC(user, user.did, identityVC.vc);
     user.credentials = [identityVC.vc];

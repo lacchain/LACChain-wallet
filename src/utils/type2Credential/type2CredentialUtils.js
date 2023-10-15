@@ -87,7 +87,7 @@ export const resolveProof = async (vc, proof) => {
   if (credentialStatusResult.error) {
     return {
       error: true,
-      message: "resolveProof" + credentialStatusResult.message,
+      message: "resolveProof: " + credentialStatusResult.message,
       data: {},
     };
   }
@@ -620,6 +620,7 @@ const verifyEcdsaJcs2019ProofSignature = async (vc, proof, publicKey) => {
   }
 
   try {
+    console.log("pub key to verify: " + JSON.stringify(publicKey.publicKeyJwk));
     const subtle = window.crypto.subtle;
     const importedKey = await subtle.importKey(
       "jwk",
@@ -635,14 +636,12 @@ const verifyEcdsaJcs2019ProofSignature = async (vc, proof, publicKey) => {
       proofBytes,
       Buffer.from(hashData, "hex")
     );
-    if (result === true) {
-      return {
-        error: false,
-        data: {
-          issuerSignatureValid: true,
-        },
-      };
-    }
+    return {
+      error: false,
+      data: {
+        issuerSignatureValid: result,
+      },
+    };
   } catch (e) {
     return {
       error: true,

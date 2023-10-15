@@ -40,6 +40,7 @@ export const tryDecodeDomain = (domain) => {
     const len = data.length;
     const encodedPayload = data.subarray(0, len - 4);
     const computedChecksum = checksum(encodedPayload);
+
     const checksumToVerify = Buffer.from(data.subarray(len - 4, len));
     if (!Buffer.from(computedChecksum).equals(checksumToVerify)) {
       const message = "Checksum mismatch";
@@ -76,8 +77,10 @@ export const tryDecodeDomain = (domain) => {
     const chainOfTrustContractAddress = ethers.utils.getAddress(
       "0x" + Buffer.from(data.subarray(44, 64)).toString("hex")
     );
+    const fullChainId = Buffer.from(data.subarray(64, len - 4)).toString("hex");
     const chainId =
-      "0x" + Buffer.from(data.subarray(64, len - 4)).toString("hex");
+      "0x" +
+      (fullChainId.startsWith("0") ? fullChainId.substring(1) : fullChainId);
     return {
       error: false,
       message: null,
