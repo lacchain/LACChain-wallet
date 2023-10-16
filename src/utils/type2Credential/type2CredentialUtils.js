@@ -11,9 +11,7 @@ import { gasModelProvider } from '../../constants/blockchain';
 import { filterP256JwkPublicKeysFromJwkAssertionKeys, resolve } from '../did';
 import { sha256 } from '../cryptoUtils';
 import {
-  BLOCKCHAIN_TYPE1_POE,
-  CREDENTIAL_PROOF_TIME,
-  THROW_ON_NOT_FOUND_KEY_ERROR,
+  ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD,
 } from '../../constants/env';
 
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -178,7 +176,7 @@ export const verifyCredentialExpiration = async (vc, proof) => {
   let isExpired = true;
   let onchainExists = false;
   if (onchainTimeDetailsResult.error) {
-    if (BLOCKCHAIN_TYPE1_POE) {
+    if (ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD === 'BLOCKCHAIN_TYPE1_POE') {
       return {
         error: true,
         message:
@@ -268,7 +266,7 @@ export const validateCredentialSignature = async (vc, proof) => {
 
   if (!resolvedPublicKeyResponse.data.found) {
     let time;
-    if (THROW_ON_NOT_FOUND_KEY_ERROR) {
+    if (ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD === 'THROW_ON_NOT_FOUND_KEY_ERROR') {
       return {
         error: false,
         message: undefined,
@@ -276,7 +274,7 @@ export const validateCredentialSignature = async (vc, proof) => {
           isValidSignature: false,
         },
       };
-    } if (BLOCKCHAIN_TYPE1_POE) {
+    } else if (ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD === 'BLOCKCHAIN_TYPE1_POE') {
       const onchainTimeDetailsResult = await resolveOnchainTimeDetails(
         vc,
         proof,
@@ -290,7 +288,7 @@ export const validateCredentialSignature = async (vc, proof) => {
         };
       }
       time = onchainTimeDetailsResult.data.time;
-    } else if (CREDENTIAL_PROOF_TIME && proof.created) {
+    } else if (ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD === 'CREDENTIAL_PROOF_TIME' && proof.created) {
       try {
         time = Math.floor(new Date(proof.created).getTime() / 1000);
       } catch (e) {
