@@ -163,6 +163,19 @@ export const types = {
 		image: "/images/cards/vc-health.png",
 		image2x: "/images/cards/vc-health.png"
 	},
+	'https://credentials-library.lacchain.net/credentials/identity/v2': {
+		id: 13,
+		kind: 'vc',
+		title: "LACChain ID Credential",
+		topLeft: ( { issuanceDate } ) => `Issued ${moment( issuanceDate ).format( 'DD/MM/YYYY' )}`,
+		topRight: ( { expirationDate } ) => `Expires ${moment( expirationDate ).format( 'DD/MM/YYYY' )}`,
+		claim: ( { credentialSubject } ) => `${credentialSubject.givenName} ${credentialSubject.familyName} ${credentialSubject.lastName?credentialSubject.lastName:''}`,
+		bottom: ( { issuer } ) => `Issuer ${issuer.substring( 0, 13 )} ... ${issuer.substring( issuer.length - 10,issuer.length )}`,
+		icon: () => <FontAwesomeIcon icon={faUser} size="2x" />,
+		description: "This is an auto-issued LACChain ID credential",
+		image: "/images/cards/vc-id.png",
+		image2x: "/images/cards/vc-id.png"
+	},
 };
 
 export const token_types = {
