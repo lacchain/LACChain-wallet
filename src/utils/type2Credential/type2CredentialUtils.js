@@ -184,33 +184,33 @@ export const verifyCredentialExpiration = async (vc, proof) => {
         data: {},
       };
     }
-    if (proof && proof.expires) {
-      try {
-        const proofExpirationTime = Math.floor(
-          new Date(proof.expires).getTime() / 1000,
-        );
-        isExpired = proofExpirationTime < Math.floor(new Date().getTime() / 1000);
-      } catch (e) {
-        return {
-          error: true,
-          message: "Invalid 'expires' attribute value found in proof",
-          data: {},
-        };
+    if (ON_NOT_FOUND_PUB_KEY_RESOLUTION_METHOD === 'CREDENTIAL_PROOF_TIME') {
+      if (proof && proof.expires) {
+        try {
+          const proofExpirationTime = Math.floor(
+            new Date(proof.expires).getTime() / 1000,
+          );
+          isExpired = proofExpirationTime < Math.floor(new Date().getTime() / 1000);
+        } catch (e) {
+          return {
+            error: true,
+            message: "Invalid 'expires' attribute value found in proof",
+            data: {},
+          };
+        }
+      } else {
+        isExpired = false;
       }
-    } else {
-      isExpired = false;
     }
   } else {
     const { time } = onchainTimeDetailsResult.data;
-    const { exp } = onchainTimeDetailsResult.data;
     onchainExists = time > 0;
     if (proof && proof.expires) {
       try {
         const proofExpirationTime = Math.floor(
           new Date(proof.expires).getTime() / 1000,
         );
-        const expirationTime = exp < proofExpirationTime && exp > 0 ? exp : proofExpirationTime; // omits non-expiring case when am expiration date is set in the proof
-        isExpired = expirationTime < Math.floor(new Date().getTime() / 1000);
+        isExpired = onchainTimeDetailsResult.data.isOnchainExpired || proofExpirationTime < Math.floor(new Date().getTime() / 1000);
       } catch (e) {
         return {
           error: true,
@@ -219,7 +219,7 @@ export const verifyCredentialExpiration = async (vc, proof) => {
         };
       }
     } else {
-      isExpired = exp > 0 && time < Math.floor(new Date().getTime() / 1000);
+      isExpired = onchainTimeDetailsResult.data.isOnchainExpired;
     }
   }
   return {
@@ -542,7 +542,7 @@ const resolveOnchainTimeDetails = async (vc, proof) => {
     }
     const vrDetails = vrDetailsResult.data;
     const isOnchainExpired = vrDetails.iat > 0
-      && vrDetails.exp < Math.floor(new Date().getTime() / 1000);
+      && vrDetails.exp < Math.floor(new Date().getTime() / 1000) && vrDetails.exp !== 0;
     const time = vrDetails.iat;
     const { exp } = vrDetails;
     return {
