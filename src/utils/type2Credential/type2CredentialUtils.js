@@ -610,7 +610,6 @@ const verifyEcdsaJcs2019ProofSignature = async (vc, proof, publicKey) => {
   }
 
   try {
-    console.log(`pub key to verify: ${JSON.stringify(publicKey.publicKeyJwk)}`);
     const { subtle } = window.crypto;
     const importedKey = await subtle.importKey(
       'jwk',
