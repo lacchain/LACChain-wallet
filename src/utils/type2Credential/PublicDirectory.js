@@ -1,7 +1,7 @@
-import { ethers } from "ethers";
-import { gasModelProvider } from "../../constants/blockchain";
-import PublicDirectoryAbi from "../PublicDirectoryAbi";
-import { SUPPORTED_PUBLIC_DIRECTORY_VERSION } from "../../constants/env";
+import { ethers } from 'ethers';
+import { gasModelProvider } from '../../constants/blockchain';
+import PublicDirectoryAbi from '../PublicDirectoryAbi';
+import { SUPPORTED_PUBLIC_DIRECTORY_VERSION } from '../../constants/env';
 
 /**
  * Retrieves and returns all data pertaining to an entity whose identifier is `id`
@@ -13,7 +13,7 @@ import { SUPPORTED_PUBLIC_DIRECTORY_VERSION } from "../../constants/env";
 export const getPublicDirectoryMember = async (
   publicDirectoryContractAddress,
   id,
-  chainId
+  chainId,
 ) => {
   const providerResponse = gasModelProvider(chainId);
   if (providerResponse.error) {
@@ -27,14 +27,13 @@ export const getPublicDirectoryMember = async (
   const publicDirectoryContractInstance = new ethers.Contract(
     publicDirectoryContractAddress,
     PublicDirectoryAbi.abi,
-    providerResponse.data.provider
+    providerResponse.data.provider,
   );
-  const publicDirectoryVersion =
-    await publicDirectoryContractInstance.version(); //  TODO: catch
+  const publicDirectoryVersion = await publicDirectoryContractInstance.version(); //  TODO: catch
   if (
     publicDirectoryVersion.toString() !== SUPPORTED_PUBLIC_DIRECTORY_VERSION
   ) {
-    const message = "Public Directory Version not supported";
+    const message = 'Public Directory Version not supported';
     console.log(`INFO:: ${message} : `, publicDirectoryVersion);
     return {
       error: true,
@@ -43,7 +42,7 @@ export const getPublicDirectoryMember = async (
     };
   }
   if (!id) {
-    const message = "member identifier (e.g. did) not provided";
+    const message = 'member identifier (e.g. did) not provided';
     return {
       error: true,
       message,
@@ -54,10 +53,10 @@ export const getPublicDirectoryMember = async (
   const details = member.memberData;
   const iat = parseInt(ethers.utils.formatUnits(details.iat, 0));
   const exp = parseInt(ethers.utils.formatUnits(details.exp, 0));
-  const expires = details.expires;
+  const { expires } = details;
   const currentTime = Math.floor(Date.now() / 1000);
   if (iat === 0 || (expires === true && exp < currentTime)) {
-    console.log("INFO:: Member has expired or is no longer valid");
+    console.log('INFO:: Member has expired or is no longer valid');
     return {
       error: false,
       data: {
@@ -67,13 +66,13 @@ export const getPublicDirectoryMember = async (
   }
 
   const lastBlockChange = parseInt(
-    ethers.utils.formatUnits(member.lastBlockChange, 0)
+    ethers.utils.formatUnits(member.lastBlockChange, 0),
   );
   // TODO: resolve member data from last block change
   const memberData = await getMemberData(
     lastBlockChange,
     id,
-    publicDirectoryContractAddress
+    publicDirectoryContractAddress,
   );
   if (memberData.error) {
     return {
@@ -82,18 +81,16 @@ export const getPublicDirectoryMember = async (
     };
   }
   const memberIdentificationDetails = memberData.data;
-  const legalName =
-    memberIdentificationDetails &&
-    memberIdentificationDetails.identificationData &&
-    memberIdentificationDetails.identificationData.legalName
-      ? memberIdentificationDetails.identificationData.legalName
-      : null;
-  const alpha3CountryCode =
-    memberIdentificationDetails &&
-    memberIdentificationDetails.identificationData &&
-    memberIdentificationDetails.identificationData.countryCode
-      ? memberIdentificationDetails.identificationDatacountryCode
-      : null;
+  const legalName = memberIdentificationDetails
+    && memberIdentificationDetails.identificationData
+    && memberIdentificationDetails.identificationData.legalName
+    ? memberIdentificationDetails.identificationData.legalName
+    : null;
+  const alpha3CountryCode = memberIdentificationDetails
+    && memberIdentificationDetails.identificationData
+    && memberIdentificationDetails.identificationData.countryCode
+    ? memberIdentificationDetails.identificationDatacountryCode
+    : null;
   return {
     error: false,
     data: {
@@ -116,7 +113,7 @@ export const getPublicDirectoryMember = async (
 export const getMemberData = async (
   blockNumber,
   id,
-  publicDirectoryContractAddress
+  publicDirectoryContractAddress,
 ) => {
   const providerResponse = gasModelProvider();
   if (providerResponse.error) {
@@ -130,18 +127,17 @@ export const getMemberData = async (
     const publicDirectoryContractInstance = new ethers.Contract(
       publicDirectoryContractAddress,
       PublicDirectoryAbi.abi,
-      providerResponse.data.provider
+      providerResponse.data.provider,
     );
 
     const data = await publicDirectoryContractInstance.queryFilter(
-      "MemberChanged",
+      'MemberChanged',
       blockNumber,
-      blockNumber
+      blockNumber,
     );
     const found = data.find(
-      (log) =>
-        log.address.toLocaleLowerCase() ===
-        publicDirectoryContractAddress.toLocaleLowerCase()
+      (log) => log.address.toLocaleLowerCase()
+        === publicDirectoryContractAddress.toLocaleLowerCase(),
     );
     if (!found) {
       return {
@@ -152,10 +148,10 @@ export const getMemberData = async (
         },
       };
     }
-    const rawData = found.args.rawData;
+    const { rawData } = found.args;
     const decodedFromHex = Buffer.from(
-      rawData.replace("0x", ""),
-      "hex"
+      rawData.replace('0x', ''),
+      'hex',
     ).toString();
     const parsedData = JSON.parse(decodedFromHex);
     // TODO: define association between type and version better in regards to a certain public directory metaclass
@@ -165,9 +161,8 @@ export const getMemberData = async (
       data: parsedData,
     };
   } catch (err) {
-    const message =
-      "There was an error while retrieving data for the member being queried";
-    console.log("Error::", message, err);
+    const message = 'There was an error while retrieving data for the member being queried';
+    console.log('Error::', message, err);
     return {
       error: true,
       message,
@@ -179,18 +174,18 @@ export const getMemberData = async (
 export const resolveEntityNameFromPublicDirectory = async (
   publicDirectoryContractAddress,
   id,
-  chainId
+  chainId,
 ) => {
   const pdMemberResponse = await getPublicDirectoryMember(
     publicDirectoryContractAddress,
     id,
-    chainId
+    chainId,
   );
   if (pdMemberResponse.error) {
     return {
       error: true,
       message:
-        "resolveEntityNameFromPublicDirectory: " + pdMemberResponse.message,
+        `resolveEntityNameFromPublicDirectory: ${pdMemberResponse.message}`,
       data: {},
     };
   }
@@ -202,7 +197,7 @@ export const resolveEntityNameFromPublicDirectory = async (
     error: false,
     message: undefined,
     data: {
-      isName: name ? true : false,
+      isName: !!name,
       name,
     },
   };

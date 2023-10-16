@@ -1,15 +1,15 @@
-import React from "react";
-import cn from "classnames";
-import { Link } from "react-router-dom";
-import styles from "./Control.module.sass";
-import Icon from "../Icon";
+import React from 'react';
+import cn from 'classnames';
+import { Link } from 'react-router-dom';
+import styles from './Control.module.sass';
+import Icon from '../Icon';
 
-const Control = ({ className, item }) => {
+function Control({ className, item }) {
   return (
     <div className={cn(styles.control, className)}>
-      <div className={cn("container", styles.container)}>
+      <div className={cn('container', styles.container)}>
         <Link
-          className={cn("button-stroke button-small", styles.button)}
+          className={cn('button-stroke button-small', styles.button)}
           to="/"
         >
           <Icon name="arrow-prev" size="10" />
@@ -31,6 +31,6 @@ const Control = ({ className, item }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Control;

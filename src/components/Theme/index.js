@@ -1,17 +1,17 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./Theme.module.sass";
-import useDarkMode from "use-dark-mode";
+import React from 'react';
+import cn from 'classnames';
+import useDarkMode from 'use-dark-mode';
+import styles from './Theme.module.sass';
 
-const Theme = ({ className }) => {
+function Theme({ className }) {
   const darkMode = useDarkMode(false);
 
   return (
     <label
       className={cn(
         styles.theme,
-        { [styles.theme]: className === "theme" },
-        { [styles.themeBig]: className === "theme-big" }
+        { [styles.theme]: className === 'theme' },
+        { [styles.themeBig]: className === 'theme-big' },
       )}
     >
       <input
@@ -21,10 +21,10 @@ const Theme = ({ className }) => {
         type="checkbox"
       />
       <span className={styles.inner}>
-        <span className={styles.box}></span>
+        <span className={styles.box} />
       </span>
     </label>
   );
-};
+}
 
 export default Theme;

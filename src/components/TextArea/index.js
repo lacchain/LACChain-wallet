@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import styles from "./TextArea.module.sass";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import styles from './TextArea.module.sass';
 
-const TextArea = ({ className, label, ...props }) => {
+function TextArea({ className, label, ...props }) {
   return (
     <div className={cn(styles.field, className)}>
       {label && <div className={styles.label}>{label}</div>}
@@ -11,6 +11,6 @@ const TextArea = ({ className, label, ...props }) => {
       </div>
     </div>
   );
-};
+}
 
 export default TextArea;

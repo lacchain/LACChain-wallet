@@ -1,8 +1,8 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./Switch.module.sass";
+import React from 'react';
+import cn from 'classnames';
+import styles from './Switch.module.sass';
 
-const Switch = ({ className, value, setValue }) => {
+function Switch({ className, value, setValue }) {
   return (
     <label className={cn(styles.switch, className)}>
       <input
@@ -12,10 +12,10 @@ const Switch = ({ className, value, setValue }) => {
         onChange={() => setValue(!value)}
       />
       <span className={styles.inner}>
-        <span className={styles.box}></span>
+        <span className={styles.box} />
       </span>
     </label>
   );
-};
+}
 
 export default Switch;

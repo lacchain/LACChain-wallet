@@ -1,32 +1,35 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./ProfileEdit.module.sass";
-import Control from "../../components/Control";
-import TextInput from "../../components/TextInput";
-import TextArea from "../../components/TextArea";
-import Icon from "../../components/Icon";
+import React from 'react';
+import cn from 'classnames';
+import styles from './ProfileEdit.module.sass';
+import Control from '../../components/Control';
+import TextInput from '../../components/TextInput';
+import TextArea from '../../components/TextArea';
+import Icon from '../../components/Icon';
 
 const breadcrumbs = [
   {
-    title: "Home",
-    url: "/",
+    title: 'Home',
+    url: '/',
   },
   {
-    title: "Edit Profile",
+    title: 'Edit Profile',
   },
 ];
 
-const ProfileEdit = () => {
+function ProfileEdit() {
   return (
     <div className={styles.page}>
       <Control className={styles.control} item={breadcrumbs} />
-      <div className={cn("section-pt80", styles.section)}>
-        <div className={cn("container", styles.container)}>
+      <div className={cn('section-pt80', styles.section)}>
+        <div className={cn('container', styles.container)}>
           <div className={styles.top}>
-            <h1 className={cn("h2", styles.title)}>Edit profile</h1>
+            <h1 className={cn('h2', styles.title)}>Edit profile</h1>
             <div className={styles.info}>
-              You can set preferred display name, create{" "}
-              <strong>your profile URL</strong> and manage other personal
+              You can set preferred display name, create
+              {' '}
+              <strong>your profile URL</strong>
+              {' '}
+              and manage other personal
               settings.
             </div>
           </div>
@@ -39,7 +42,8 @@ const ProfileEdit = () => {
                 <div className={styles.details}>
                   <div className={styles.stage}>Profile photo</div>
                   <div className={styles.text}>
-                    We recommend an image of at least 400x400. Gifs work too{" "}
+                    We recommend an image of at least 400x400. Gifs work too
+                    {' '}
                     <span role="img" aria-label="hooray">
                       🙌
                     </span>
@@ -47,8 +51,8 @@ const ProfileEdit = () => {
                   <div className={styles.file}>
                     <button
                       className={cn(
-                        "button-stroke button-small",
-                        styles.button
+                        'button-stroke button-small',
+                        styles.button,
                       )}
                     >
                       Upload
@@ -110,8 +114,8 @@ const ProfileEdit = () => {
                       />
                       <button
                         className={cn(
-                          "button-stroke button-small",
-                          styles.button
+                          'button-stroke button-small',
+                          styles.button,
                         )}
                       >
                         Verify account
@@ -119,7 +123,7 @@ const ProfileEdit = () => {
                     </div>
                   </div>
                   <button
-                    className={cn("button-stroke button-small", styles.button)}
+                    className={cn('button-stroke button-small', styles.button)}
                   >
                     <Icon name="plus-circle" size="16" />
                     <span>Add more social account</span>
@@ -131,7 +135,7 @@ const ProfileEdit = () => {
                 wallet. Click 'Update profile' then sign the message
               </div>
               <div className={styles.btns}>
-                <button className={cn("button", styles.button)}>
+                <button className={cn('button', styles.button)}>
                   Update Profile
                 </button>
                 <button className={styles.clear}>
@@ -145,6 +149,6 @@ const ProfileEdit = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ProfileEdit;

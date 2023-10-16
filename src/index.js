@@ -1,13 +1,13 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import App from "./App";
-import WithAuthContextProvider from "./higherOrderComponents/WithAuthContextProvider";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import WithAuthContextProvider from './higherOrderComponents/WithAuthContextProvider';
 
 ReactDOM.render(
   <React.StrictMode>
-      <WithAuthContextProvider>
-          <App />
-      </WithAuthContextProvider>
+    <WithAuthContextProvider>
+      <App />
+    </WithAuthContextProvider>
   </React.StrictMode>,
-  document.getElementById("root")
+  document.getElementById('root'),
 );

@@ -1,13 +1,13 @@
-import { Lac1DID } from "@lacchain/did";
+import { Lac1DID } from '@lacchain/did';
+import canonicalize from 'canonicalize';
+import { toUtf8Bytes } from 'ethers/lib/utils';
 import {
-  LAC1_CHAIN_ID,
   LAC1_DID_REGISTRY,
   LAC_DID_NETWORK_IDENTIFIER,
   NODE_ADDRESS,
   RPC_URL,
-} from "../../../constants/env";
-import canonicalize from "canonicalize";
-import { toUtf8Bytes } from "ethers/lib/utils";
+} from '../../../constants/env';
+import { LAC1_CHAIN_ID } from '../../../constants/blockchain';
 
 export const createMockedIssuer = async () => {
   try {
@@ -20,22 +20,22 @@ export const createMockedIssuer = async () => {
       chainId: LAC1_CHAIN_ID,
     });
     // generate p256 public key
-    const subtle = window.crypto.subtle;
+    const { subtle } = window.crypto;
     const p256Key = await subtle.generateKey(
-      { name: "ECDSA", namedCurve: "P-256" },
+      { name: 'ECDSA', namedCurve: 'P-256' },
       true,
-      ["sign", "verify"]
+      ['sign', 'verify'],
     );
-    const jwk = await subtle.exportKey("jwk", p256Key.publicKey);
-    const privJwk = await subtle.exportKey("jwk", p256Key.privateKey);
+    const jwk = await subtle.exportKey('jwk', p256Key.publicKey);
+    const privJwk = await subtle.exportKey('jwk', p256Key.privateKey);
     const jwkCanon = canonicalize(jwk);
     const pubKey = toUtf8Bytes(jwkCanon);
-    const stringnifiedPublicKey = Buffer.from(pubKey).toString("hex");
+    const stringnifiedPublicKey = Buffer.from(pubKey).toString('hex');
 
     await did.addAssertionMethod({
-      algorithm: "jwk",
-      encoding: "json",
-      publicKey: "0x" + stringnifiedPublicKey,
+      algorithm: 'jwk',
+      encoding: 'json',
+      publicKey: `0x${stringnifiedPublicKey}`,
       controller: did.address,
     });
     return {
@@ -49,7 +49,7 @@ export const createMockedIssuer = async () => {
   } catch (e) {
     return {
       error: true,
-      message: "Error while creating mocked issuer: " + e.message,
+      message: `Error while creating mocked issuer: ${e.message}`,
     };
   }
 };

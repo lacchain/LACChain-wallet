@@ -1,38 +1,38 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import styles from "./UploadDetails.module.sass";
-import Dropdown from "../../components/Dropdown";
-import Icon from "../../components/Icon";
-import TextInput from "../../components/TextInput";
-import Switch from "../../components/Switch";
-import Loader from "../../components/Loader";
-import Modal from "../../components/Modal";
-import Preview from "./Preview";
-import Cards from "./Cards";
-import FolowSteps from "./FolowSteps";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import styles from './UploadDetails.module.sass';
+import Dropdown from '../../components/Dropdown';
+import Icon from '../../components/Icon';
+import TextInput from '../../components/TextInput';
+import Switch from '../../components/Switch';
+import Loader from '../../components/Loader';
+import Modal from '../../components/Modal';
+import Preview from './Preview';
+import Cards from './Cards';
+import FolowSteps from './FolowSteps';
 
-const royaltiesOptions = ["10%", "20%", "30%"];
+const royaltiesOptions = ['10%', '20%', '30%'];
 
 const items = [
   {
-    title: "Create collection",
-    color: "#4BC9F0",
+    title: 'Create collection',
+    color: '#4BC9F0',
   },
   {
-    title: "Crypto Legend - Professor",
-    color: "#45B26B",
+    title: 'Crypto Legend - Professor',
+    color: '#45B26B',
   },
   {
-    title: "Crypto Legend - Professor",
-    color: "#EF466F",
+    title: 'Crypto Legend - Professor',
+    color: '#EF466F',
   },
   {
-    title: "Legend Photography",
-    color: "#9757D7",
+    title: 'Legend Photography',
+    color: '#9757D7',
   },
 ];
 
-const Upload = () => {
+function Upload() {
   const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
   const [price, setPrice] = useState(false);
@@ -44,15 +44,15 @@ const Upload = () => {
 
   return (
     <>
-      <div className={cn("section", styles.section)}>
-        <div className={cn("container", styles.container)}>
+      <div className={cn('section', styles.section)}>
+        <div className={cn('container', styles.container)}>
           <div className={styles.wrapper}>
             <div className={styles.head}>
-              <div className={cn("h2", styles.title)}>
+              <div className={cn('h2', styles.title)}>
                 Create single collectible
               </div>
               <button
-                className={cn("button-stroke button-small", styles.button)}
+                className={cn('button-stroke button-small', styles.button)}
               >
                 Switch to Multiple
               </button>
@@ -165,14 +165,14 @@ const Upload = () => {
               </div>
               <div className={styles.foot}>
                 <button
-                  className={cn("button-stroke tablet-show", styles.button)}
+                  className={cn('button-stroke tablet-show', styles.button)}
                   onClick={() => setVisiblePreview(true)}
                   type="button"
                 >
                   Preview
                 </button>
                 <button
-                  className={cn("button", styles.button)}
+                  className={cn('button', styles.button)}
                   onClick={() => setVisibleModal(true)}
                   // type="button" hide after form customization
                   type="button"
@@ -198,6 +198,6 @@ const Upload = () => {
       </Modal>
     </>
   );
-};
+}
 
 export default Upload;

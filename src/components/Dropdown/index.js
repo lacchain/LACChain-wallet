@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import OutsideClickHandler from "react-outside-click-handler";
-import styles from "./Dropdown.module.sass";
-import Icon from "../Icon";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import OutsideClickHandler from 'react-outside-click-handler';
+import styles from './Dropdown.module.sass';
+import Icon from '../Icon';
 
-const Dropdown = ({ className, value, setValue, options }) => {
+function Dropdown({
+  className, value, setValue, options,
+}) {
   const [visible, setVisible] = useState(false);
 
   const handleClick = (value) => {
@@ -39,6 +41,6 @@ const Dropdown = ({ className, value, setValue, options }) => {
       </div>
     </OutsideClickHandler>
   );
-};
+}
 
 export default Dropdown;

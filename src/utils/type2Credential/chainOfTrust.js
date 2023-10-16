@@ -1,7 +1,7 @@
-import { ethers } from "ethers";
-import ChainOfTrustAbi from "../ChainOfTrustAbi";
-import { gasModelProvider } from "../../constants/blockchain";
-import { findDelegationKeys, resolve } from "../did";
+import { ethers } from 'ethers';
+import ChainOfTrustAbi from '../ChainOfTrustAbi';
+import { gasModelProvider } from '../../constants/blockchain';
+import { findDelegationKeys, resolve } from '../did';
 
 /**
  * Resolves the chain of trust living at an ethereum based network whose chainId is 'chainId'
@@ -14,7 +14,7 @@ import { findDelegationKeys, resolve } from "../did";
 export const resolveChainOfTrust = async (
   chainOfTrustContractAddress,
   chainId,
-  id
+  id,
 ) => {
   const managerCandidatesResponse = await getManagersCandidates(id);
   if (managerCandidatesResponse.error) {
@@ -31,7 +31,7 @@ export const resolveChainOfTrust = async (
     const cotResponseFromEntityManager = await getChainOfTrustFromEntityManager(
       managerCandidate,
       chainOfTrustContractAddress,
-      chainId
+      chainId,
     );
     if (cotResponseFromEntityManager.error) {
       return {
@@ -67,7 +67,7 @@ export const resolveChainOfTrust = async (
 export const getChainOfTrustFromEntityManager = async (
   managerCandidate,
   chainOfTrustContractAddress,
-  chainId
+  chainId,
 ) => {
   const providerResponse = gasModelProvider(chainId);
   if (providerResponse.error) {
@@ -80,7 +80,7 @@ export const getChainOfTrustFromEntityManager = async (
   const chainOfTrustContractInstance = new ethers.Contract(
     chainOfTrustContractAddress,
     ChainOfTrustAbi.abi,
-    providerResponse.data.provider
+    providerResponse.data.provider,
   );
 
   let trustedBy = managerCandidate;
@@ -89,15 +89,14 @@ export const getChainOfTrustFromEntityManager = async (
 
   // limiting since it is not optimized to make multiple calls
   while (iter < 4) {
-    console.log("INFO:: Getting Root; teration #", iter + 1);
+    console.log('INFO:: Getting Root; teration #', iter + 1);
     let r;
     try {
       r = await chainOfTrustContractInstance.getMemberDetailsByEntityManager(
-        trustedBy
+        trustedBy,
       );
     } catch (e) {
-      const message =
-        "There was an error getting the chain of trust: " + e.message;
+      const message = `There was an error getting the chain of trust: ${e.message}`;
       return {
         error: true,
         message,
@@ -114,7 +113,7 @@ export const getChainOfTrustFromEntityManager = async (
       };
     }
 
-    //// push
+    /// / push
     const trustElement = {
       valid: true,
       address: r.did,
@@ -145,12 +144,12 @@ export const getManagersCandidates = async (did) => {
   const didDocument = await resolve(did);
   const delegationKeys = findDelegationKeys(
     didDocument,
-    "EcdsaSecp256k1RecoveryMethod2020"
-  ).map((delegationKey) => "0x" + Buffer.from(delegationKey).toString("hex"));
+    'EcdsaSecp256k1RecoveryMethod2020',
+  ).map((delegationKey) => `0x${Buffer.from(delegationKey).toString('hex')}`);
   if (delegationKeys.length > 5) {
     return {
       error: true,
-      message: "Too many delegation keys to process",
+      message: 'Too many delegation keys to process',
     };
   }
   return {

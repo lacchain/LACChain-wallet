@@ -1,27 +1,27 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import styles from "./Burn.module.sass";
-import SelectClaims from "./SelectClaims";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import styles from './Burn.module.sass';
+import SelectClaims from './SelectClaims';
 import {
   deriveCredential,
   toQRCode,
-} from "../../utils/CredentialVerificationUtils";
-import { presentCredential } from "../../utils/credentials";
-import { useAuthContext } from "../../contexts/authContext";
+} from '../../utils/CredentialVerificationUtils';
+import { presentCredential } from '../../utils/credentials';
+import { useAuthContext } from '../../contexts/authContext';
 
-const Presentation = ({ className, credential }) => {
+function Presentation({ className, credential }) {
   const claimNames = Object.keys(credential.credentialSubject || {});
-  const [qr, setQRCode] = useState("");
+  const [qr, setQRCode] = useState('');
   const [selected, setSelected] = useState(claimNames);
   const { user } = useAuthContext();
 
   return (
     <div className={cn(className, styles.transfer)}>
-      <div className={cn("h4", styles.title)}>Presentation</div>
+      <div className={cn('h4', styles.title)}>Presentation</div>
       <div className={styles.text}>
         To generate a Verifiable Presentation with Selective Disclosure
         (Zero-Knowledge Proof), please select the fields to include:
-        <p style={{ marginTop: "15px" }}>
+        <p style={{ marginTop: '15px' }}>
           {!qr && (
             <SelectClaims
               claims={credential.credentialSubject}
@@ -35,7 +35,7 @@ const Presentation = ({ className, credential }) => {
       <div className={styles.btns}>
         {!qr && (
           <button
-            className={cn("button-pink", styles.button)}
+            className={cn('button-pink', styles.button)}
             onClick={() => {
               deriveCredential(credential, selected).then(async (zkp) => {
                 const vp = presentCredential(zkp, user);
@@ -50,6 +50,6 @@ const Presentation = ({ className, credential }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Presentation;

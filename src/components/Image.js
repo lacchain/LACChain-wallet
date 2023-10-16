@@ -1,7 +1,9 @@
-import React from "react";
-import useDarkMode from "use-dark-mode";
+import React from 'react';
+import useDarkMode from 'use-dark-mode';
 
-const Image = ({ className, src, srcDark, srcSet, srcSetDark, alt }) => {
+function Image({
+  className, src, srcDark, srcSet, srcSetDark, alt,
+}) {
   const darkMode = useDarkMode(false);
 
   return (
@@ -12,6 +14,6 @@ const Image = ({ className, src, srcDark, srcSet, srcSetDark, alt }) => {
       alt={alt}
     />
   );
-};
+}
 
 export default Image;

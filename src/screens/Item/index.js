@@ -1,46 +1,46 @@
-import React, { useEffect, useState } from "react";
-import cn from "classnames";
-import styles from "./Item.module.sass";
-import Proofs from "./Proofs";
-import Claims from "./Claims";
-import Options from "./Options";
-import { types } from "../../mocks/types";
-import { issuers } from "../../mocks/issuers";
-import Raw from "./Raw";
+import React, { useEffect, useState } from 'react';
+import cn from 'classnames';
+import { Document, Page } from 'react-pdf/dist/entry.webpack';
+import styles from './Item.module.sass';
+import Proofs from './Proofs';
+import Claims from './Claims';
+import Options from './Options';
+import { types } from '../../mocks/types';
+import { issuers } from '../../mocks/issuers';
+import Raw from './Raw';
 import {
   getRootOfTrust,
   toEUCertificate,
   verifyCredential,
   verifyRootOfTrust,
   verifySignature,
-} from "../../utils/CredentialVerificationUtils";
-import RootOfTrust from "./RootOfTrust";
-import { useAuthContext } from "../../contexts/authContext";
-import { getBalance as getERC20Balance } from "../../utils/erc20";
-import { getBalance as getNFTBalance } from "../../utils/erc721";
-import { getBalance as getTokenizedBalance } from "../../utils/tokenized";
+} from '../../utils/CredentialVerificationUtils';
+import RootOfTrust from './RootOfTrust';
+import { useAuthContext } from '../../contexts/authContext';
+import { getBalance as getERC20Balance } from '../../utils/erc20';
+import { getBalance as getNFTBalance } from '../../utils/erc721';
+import { getBalance as getTokenizedBalance } from '../../utils/tokenized';
 
 import {
   GetPdfFromCredential,
   validateVaccinationCertificateV2VerifiableCredential,
-} from "./VcToPdf";
-import { Document, Page } from "react-pdf/dist/entry.webpack";
-import { tryDecodeDomain } from "../../utils/domainType0001";
-import { getPublicDirectoryMember } from "../../utils/type2Credential/PublicDirectory";
-import { resolveRootOfTrustByDomain } from "../../utils/type2Credential/rootOfTrust";
+} from './VcToPdf';
+import { tryDecodeDomain } from '../../utils/domainType0001';
+import { getPublicDirectoryMember } from '../../utils/type2Credential/PublicDirectory';
+import { resolveRootOfTrustByDomain } from '../../utils/type2Credential/rootOfTrust';
 
 const navLinks = [
-  { name: "Claims", index: 0 },
-  { name: "Proofs", index: 1 },
-  { name: "Root of Trust", index: 2 },
-  { name: "Raw", index: 3 },
-  { name: "EU", index: 4 },
+  { name: 'Claims', index: 0 },
+  { name: 'Proofs', index: 1 },
+  { name: 'Root of Trust', index: 2 },
+  { name: 'Raw', index: 3 },
+  { name: 'EU', index: 4 },
 ];
 
 const keyType = {
-  EcdsaSecp256k1Signature2019: "Ethereum SECP256K Signature",
-  RsaSignature2018: "RSA X.509 Signature",
-  BbsBlsSignature2020: "ZKP BBS+ Signature",
+  EcdsaSecp256k1Signature2019: 'Ethereum SECP256K Signature',
+  RsaSignature2018: 'RSA X.509 Signature',
+  BbsBlsSignature2020: 'ZKP BBS+ Signature',
 };
 
 async function resolveIssuer(did, domain = undefined) {
@@ -58,10 +58,10 @@ async function resolveIssuer(did, domain = undefined) {
   const member = await getPublicDirectoryMember(
     data.publicDirectoryContractAddress,
     did,
-    data.chainId
+    data.chainId,
   ); // TODO: data: appear as error on hovering
   if (member.error || !member.data.isMember) {
-    console.log("resolveIssuer: " + member.message);
+    console.log(`resolveIssuer: ${member.message}`);
     return issuers.unknown; // TODO: handle view with error
   }
 
@@ -92,28 +92,28 @@ async function verifyCredentialAndResolveIssuer(credential) {
     return {
       error: true,
       message:
-        "There was an error verifying while verifying credential: " +
-        verificationResponse.message,
+        `There was an error verifying while verifying credential: ${
+          verificationResponse.message}`,
       data: {},
     };
   }
   const verification = verificationResponse.data;
   for (const proof of credential.proof || []) {
     const vm = proof.verificationMethod;
-    const did = vm.substring(0, vm.indexOf("#"));
-    let issuerDetailsToSet = await resolveIssuer(did, proof.domain);
+    const did = vm.substring(0, vm.indexOf('#'));
+    const issuerDetailsToSet = await resolveIssuer(did, proof.domain);
     proofs.push({
       position:
         did.toLocaleLowerCase() === credential.issuer.toLowerCase()
-          ? "Issuer"
-          : "Signer",
+          ? 'Issuer'
+          : 'Signer',
       type: keyType[proof.type],
       did,
       ...issuerDetailsToSet,
       valid:
         did === credential.issuer
           ? verification.issuerSignatureValid
-          : await verifySignature(credential, proof.proofValue),// TODO: improve
+          : await verifySignature(credential, proof.proofValue), // TODO: improve
       domain: proof.domain ? proof.domain : null,
       verificationMethod: proof.verificationMethod
         ? proof.verificationMethod
@@ -127,7 +127,7 @@ async function verifyCredentialAndResolveIssuer(credential) {
   };
 }
 
-const Item = ({ match }) => {
+function Item({ match }) {
   const { user } = useAuthContext();
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -135,33 +135,30 @@ const Item = ({ match }) => {
   const [balance, setBalance] = useState(0);
   const [rootOfTrust, setRootOfTrust] = useState([]);
   const item = user.credentials.find((c) => c.id === match.params.id);
-  const credential =
-    item.type === "VerifiablePresentation"
-      ? item.verifiableCredential[0]
-      : item;
-  const attachment =
-    item.type === "VerifiablePresentation" ? item.attachment : null;
-  const context = credential["@context"];
-  const type =
-    (!Array.isArray(context)
-      ? types[context]
-      : types[context[context.length - 1]]) ||
-    types["https://www.w3.org/2018/credentials/v1"];
+  const credential = item.type === 'VerifiablePresentation'
+    ? item.verifiableCredential[0]
+    : item;
+  const attachment = item.type === 'VerifiablePresentation' ? item.attachment : null;
+  const context = credential['@context'];
+  const type = (!Array.isArray(context)
+    ? types[context]
+    : types[context[context.length - 1]])
+    || types['https://www.w3.org/2018/credentials/v1'];
   const [proofs, setProofs] = useState([]);
 
   const resolveRootOfTrust = async (
     proofs,
     issuer,
-    trustedList = undefined
+    trustedList = undefined,
   ) => {
     if (!trustedList) {
       const rootOfTrustrByDomain = await resolveRootOfTrustByDomain(
         proofs,
-        issuer
+        issuer,
       );
       if (
-        !rootOfTrustrByDomain.error &&
-        rootOfTrustrByDomain.data.trustTree.length > 0
+        !rootOfTrustrByDomain.error
+        && rootOfTrustrByDomain.data.trustTree.length > 0
       ) {
         setRootOfTrust(rootOfTrustrByDomain.data.trustTree);
         return {
@@ -199,7 +196,7 @@ const Item = ({ match }) => {
         },
       };
     } catch (e) {
-      const message = "Unable to verify root of trust";
+      const message = 'Unable to verify root of trust';
       return {
         error: true,
         message,
@@ -210,49 +207,47 @@ const Item = ({ match }) => {
 
   useEffect(() => {
     setActiveIndex(getInitialNavLinkToSet());
-    if (type.kind === "vc") {
+    if (type.kind === 'vc') {
       verifyCredentialAndResolveIssuer(credential).then(async (result) => {
         if (result.error) {
-          console.log("ERROR::", result.message);
+          console.log('ERROR::', result.message);
           setIsVerifying(false);
           return;
         }
-        const data = result.data;
+        const { data } = result;
         setProofs(data.proofs);
         const trustTreeResponse = await resolveRootOfTrust(
           data.proofs,
           credential.issuer,
-          credential.trustedList
+          credential.trustedList,
         );
         if (trustTreeResponse.error) {
-          console.log("ERROR::", trustTreeResponse.message);
+          console.log('ERROR::', trustTreeResponse.message);
         }
         setIsVerifying(false);
       });
     } else {
       switch (type.title) {
-        case "ERC-20 Token":
-          getERC20Balance(credential.address, user.did.replace(/.*:/, "")).then(
+        case 'ERC-20 Token':
+          getERC20Balance(credential.address, user.did.replace(/.*:/, '')).then(
             (balance) => {
               const amount = balance.toNumber() / 10 ** credential.decimals;
               setBalance(amount);
-            }
+            },
           );
           break;
-        case "NFT Token":
+        case 'NFT Token':
           getNFTBalance(
             credential.address,
-            user.did.replace(/.*:/, ""),
-            credential.tokenId
+            user.did.replace(/.*:/, ''),
+            credential.tokenId,
           ).then((balance) => setBalance(balance));
           break;
-        case "Tokenized Money":
-          getTokenizedBalance(credential.address).then((balance) =>
-            setBalance(balance)
-          );
+        case 'Tokenized Money':
+          getTokenizedBalance(credential.address).then((balance) => setBalance(balance));
           break;
         default:
-          console.log("Unsupported token: " + type.title);
+          console.log(`Unsupported token: ${type.title}`);
       }
     }
   }, []);
@@ -262,11 +257,11 @@ const Item = ({ match }) => {
    * @returns
    */
   function getDDCCCoreDataSetPreview() {
-    let downloadablePdf = undefined;
-    let viewablePdf = undefined;
+    let downloadablePdf;
+    let viewablePdf;
     try {
       if (validateVaccinationCertificateV2VerifiableCredential(credential)) {
-        let downloadablePdf1 = GetPdfFromCredential(credential);
+        const downloadablePdf1 = GetPdfFromCredential(credential);
         downloadablePdf = downloadablePdf1;
         viewablePdf = (
           <Document
@@ -276,23 +271,24 @@ const Item = ({ match }) => {
             <Page pageNumber={1} scale={0.55} />
           </Document>
         );
-        if (viewablePdf && downloadablePdf)
+        if (viewablePdf && downloadablePdf) {
           return (
             <a href={downloadablePdf[0].url} target="_blank" rel="noreferrer">
               {viewablePdf}
             </a>
           );
+        }
       }
     } catch (e) {
       console.log(
-        "ERROR:: There was an error converting to image... skipping",
-        e
+        'ERROR:: There was an error converting to image... skipping',
+        e,
       );
     }
   }
 
   function onDocumentLoadSuccess({ numPages }) {
-    console.log("INFO:: Successfully loaded document " + numPages);
+    console.log(`INFO:: Successfully loaded document ${numPages}`);
   }
 
   function getDefaultPreview() {
@@ -320,7 +316,7 @@ const Item = ({ match }) => {
     if (dDCCCoreDataSetPreview) return dDCCCoreDataSetPreview;
     return getDefaultPreview();
   }
-  ////////////////////////////////////
+  /// /////////////////////////////////
   /// navigation bar customization ///
   /**
    * Checks whether the passed link is 'EU' and whether the current type is 1 or 2, then returns true.
@@ -328,9 +324,7 @@ const Item = ({ match }) => {
    * @param {any} type. See {@link types}
    * @returns boolean indicating whether the passed option must be enabled or not.
    */
-  const isEUTabDisplayable = (link, type) => {
-    return link !== "EU" || type.id === 1 || type.id === 2;
-  };
+  const isEUTabDisplayable = (link, type) => link !== 'EU' || type.id === 1 || type.id === 2;
 
   /**
    * Claims tab is not displayable when type.id = 12 meaning when the verifiable credential is of type
@@ -339,17 +333,14 @@ const Item = ({ match }) => {
    * @param {any} type. See {@link types}
    * @returns boolean indicating whether the passed option must be enabled or not.
    */
-  const isClaimsTabDisplayable = (link, type) => {
-    return link !== "Claims" || type.id !== 12;
-  };
+  const isClaimsTabDisplayable = (link, type) => link !== 'Claims' || type.id !== 12;
 
   const getInitialNavLinkToSet = () => {
     let idxToSet = 1000;
     navLinks
       .filter(
-        (link) =>
-          isEUTabDisplayable(link.name, type) &&
-          isClaimsTabDisplayable(link.name, type)
+        (link) => isEUTabDisplayable(link.name, type)
+          && isClaimsTabDisplayable(link.name, type),
       )
       .map((el) => {
         if (el.index < idxToSet) idxToSet = el.index;
@@ -359,15 +350,14 @@ const Item = ({ match }) => {
 
   const filteredNavigationLinkButtons = navLinks
     .filter(
-      (link) =>
-        isEUTabDisplayable(link.name, type) &&
-        isClaimsTabDisplayable(link.name, type)
+      (link) => isEUTabDisplayable(link.name, type)
+        && isClaimsTabDisplayable(link.name, type),
     )
     .map((x) => (
       <button
         className={cn(
           { [styles.active]: x.index === activeIndex },
-          styles.link
+          styles.link,
         )}
         onClick={() => setActiveIndex(x.index)}
         key={x.index}
@@ -375,19 +365,18 @@ const Item = ({ match }) => {
         {x.name}
       </button>
     ));
-  ////////////////////////////////////
+  /// /////////////////////////////////
 
   return (
-    <>
-      <div>
-        <div className={cn("container", styles.container)}>
-          <div className={styles.card_wrapper}>
-            <div className={styles.card}>
-              <div className={styles.preview}>{getPreview()}</div>
-            </div>
-            {type.kind === "token" &&
-            type.title === "NFT Token" &&
-            balance === 0 ? (
+    <div>
+      <div className={cn('container', styles.container)}>
+        <div className={styles.card_wrapper}>
+          <div className={styles.card}>
+            <div className={styles.preview}>{getPreview()}</div>
+          </div>
+          {type.kind === 'token'
+            && type.title === 'NFT Token'
+            && balance === 0 ? (
               <></>
             ) : (
               <Options
@@ -397,132 +386,133 @@ const Item = ({ match }) => {
                 attachment={attachment}
               />
             )}
-          </div>
-          <div className={styles.details}>
-            <h1 className={cn("h5", styles.title2)}>
-              {type.kind === "vc" ? type.title : type.claim(credential)}
-            </h1>
-            <div className={styles.cost}>
-              <div className={styles.categories}>
-                {type.kind === "token" && (
-                  <div
-                    className={cn({ "category-token": true }, styles.category)}
-                  >
-                    Token
-                  </div>
-                )}
-                {credential.type.map((ct) => (
-                  <div
-                    key={ct}
-                    className={cn(
-                      { "category-vc": ct === "VerifiableCredential" },
-                      { "category-vc-id": ct === "IdentityCard" },
-                      { "category-vc-trusted": ct === "TrustedCredential" },
-                      { "category-vc-health": ct === "VaccinationCertificate" },
-                      { "category-vc-academy": ct === "EducationCertificate" },
-                      { "category-erc20": ct === "ERC-20" || ct === "ERC20" },
-                      { "category-erc721": ct === "ERC-721" },
-                      { "category-tokenized": ct === "TokenizedMoney" },
-                      { "category-generic": ct !== "" },
-                      styles.category
-                    )}
-                  >
-                    {ct}
-                  </div>
-                ))}
+        </div>
+        <div className={styles.details}>
+          <h1 className={cn('h5', styles.title2)}>
+            {type.kind === 'vc' ? type.title : type.claim(credential)}
+          </h1>
+          <div className={styles.cost}>
+            <div className={styles.categories}>
+              {type.kind === 'token' && (
+              <div
+                className={cn({ 'category-token': true }, styles.category)}
+              >
+                Token
               </div>
-            </div>
-            <div className={styles.info}>{type.description}</div>
-            {type.kind === "vc" ? (
-              <>
-                <div className={styles.nav}>
-                  {filteredNavigationLinkButtons}
+              )}
+              {credential.type.map((ct) => (
+                <div
+                  key={ct}
+                  className={cn(
+                    { 'category-vc': ct === 'VerifiableCredential' },
+                    { 'category-vc-id': ct === 'IdentityCard' },
+                    { 'category-vc-trusted': ct === 'TrustedCredential' },
+                    { 'category-vc-health': ct === 'VaccinationCertificate' },
+                    { 'category-vc-academy': ct === 'EducationCertificate' },
+                    { 'category-erc20': ct === 'ERC-20' || ct === 'ERC20' },
+                    { 'category-erc721': ct === 'ERC-721' },
+                    { 'category-tokenized': ct === 'TokenizedMoney' },
+                    { 'category-generic': ct !== '' },
+                    styles.category,
+                  )}
+                >
+                  {ct}
                 </div>
-                {activeIndex === 0 &&
-                  isClaimsTabDisplayable("Claims", type) && (
+              ))}
+            </div>
+          </div>
+          <div className={styles.info}>{type.description}</div>
+          {type.kind === 'vc' ? (
+            <>
+              <div className={styles.nav}>
+                {filteredNavigationLinkButtons}
+              </div>
+              {activeIndex === 0
+                  && isClaimsTabDisplayable('Claims', type) && (
                     <Claims
                       className={styles.users}
                       claims={credential.credentialSubject}
                     />
-                  )}
-                {activeIndex === 1 && (
-                  <Proofs className={styles.users} items={proofs} />
-                )}
-                {activeIndex === 2 && (
-                  <RootOfTrust
-                    className={styles.users}
-                    items={rootOfTrust}
-                    loading={verifying}
-                  />
-                )}
-                {activeIndex === 3 && (
-                  <Raw className={styles.users} credential={credential} />
-                )}
-                {activeIndex === 4 && (
-                  <Raw
-                    className={styles.users}
-                    credential={toEUCertificate(credential)}
-                  />
-                )}
-              </>
-            ) : (
+              )}
+              {activeIndex === 1 && (
+              <Proofs className={styles.users} items={proofs} />
+              )}
+              {activeIndex === 2 && (
+              <RootOfTrust
+                className={styles.users}
+                items={rootOfTrust}
+                loading={verifying}
+              />
+              )}
+              {activeIndex === 3 && (
+              <Raw className={styles.users} credential={credential} />
+              )}
+              {activeIndex === 4 && (
+              <Raw
+                className={styles.users}
+                credential={toEUCertificate(credential)}
+              />
+              )}
+            </>
+          ) : (
+            <>
+              <div className={styles.amount}>
+                <span className={styles.text}>
+                  {balance}
+                  {' '}
+                  {credential.symbol}
+                </span>
+              </div>
+              <div className={styles.token}>
+                <span className={styles.label}>Name: </span>
+                <span className={styles.text}>{credential.name}</span>
+              </div>
+              <div className={styles.token}>
+                <span className={styles.label}>Symbol: </span>
+                <span className={styles.text}>{credential.symbol}</span>
+              </div>
+              <div className={styles.token}>
+                <span className={styles.label}>Address: </span>
+                <span className={styles.text}>{credential.address}</span>
+              </div>
+              {type.title === 'ERC-20 Token' && (
+              <div className={styles.token}>
+                <span className={styles.label}>Decimals: </span>
+                <span className={styles.text}>{credential.decimals}</span>
+              </div>
+              )}
+              {type.title === 'ERC-20 Token' && (
+              <div className={styles.token}>
+                <span className={styles.label}>Total Supply: </span>
+                <span className={styles.text}>
+                  {credential.totalSupply
+                    ? credential.totalSupply / 10 ** credential.decimals
+                    : 0}
+                </span>
+              </div>
+              )}
+              {type.title === 'NFT Token' && (
               <>
-                <div className={styles.amount}>
-                  <span className={styles.text}>
-                    {balance} {credential.symbol}
-                  </span>
+                <div className={styles.token}>
+                  <span className={styles.label}>Token ID: </span>
+                  <span className={styles.text}>{credential.tokenId}</span>
                 </div>
                 <div className={styles.token}>
-                  <span className={styles.label}>Name: </span>
-                  <span className={styles.text}>{credential.name}</span>
+                  <span className={styles.label}>Token URI: </span>
+                  <span className={styles.text}>{credential.uri}</span>
                 </div>
                 <div className={styles.token}>
-                  <span className={styles.label}>Symbol: </span>
-                  <span className={styles.text}>{credential.symbol}</span>
+                  <span className={styles.label}>Owner: </span>
+                  <span className={styles.text}>{credential.owner}</span>
                 </div>
-                <div className={styles.token}>
-                  <span className={styles.label}>Address: </span>
-                  <span className={styles.text}>{credential.address}</span>
-                </div>
-                {type.title === "ERC-20 Token" && (
-                  <div className={styles.token}>
-                    <span className={styles.label}>Decimals: </span>
-                    <span className={styles.text}>{credential.decimals}</span>
-                  </div>
-                )}
-                {type.title === "ERC-20 Token" && (
-                  <div className={styles.token}>
-                    <span className={styles.label}>Total Supply: </span>
-                    <span className={styles.text}>
-                      {credential.totalSupply
-                        ? credential.totalSupply / 10 ** credential.decimals
-                        : 0}
-                    </span>
-                  </div>
-                )}
-                {type.title === "NFT Token" && (
-                  <>
-                    <div className={styles.token}>
-                      <span className={styles.label}>Token ID: </span>
-                      <span className={styles.text}>{credential.tokenId}</span>
-                    </div>
-                    <div className={styles.token}>
-                      <span className={styles.label}>Token URI: </span>
-                      <span className={styles.text}>{credential.uri}</span>
-                    </div>
-                    <div className={styles.token}>
-                      <span className={styles.label}>Owner: </span>
-                      <span className={styles.text}>{credential.owner}</span>
-                    </div>
-                  </>
-                )}
               </>
-            )}
-          </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
-};
+}
 
 export default Item;

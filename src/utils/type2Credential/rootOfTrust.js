@@ -1,7 +1,7 @@
-import { ethers } from "ethers";
-import { resolveEntityNameFromPublicDirectory } from "./PublicDirectory";
-import { tryDecodeDomain } from "../domainType0001";
-import { resolveChainOfTrust } from "./chainOfTrust";
+import { ethers } from 'ethers';
+import { resolveEntityNameFromPublicDirectory } from './PublicDirectory';
+import { tryDecodeDomain } from '../domainType0001';
+import { resolveChainOfTrust } from './chainOfTrust';
 
 export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
   const emptyResponse = {
@@ -15,14 +15,14 @@ export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
     // TODO: choose just one proof .. the issuer one
     const foundProof = proofs.find((proof) => {
       const vm = proof.verificationMethod; // TODO: catch
-      const did = vm.substring(0, vm.indexOf("#"));
+      const did = vm.substring(0, vm.indexOf('#'));
       return did === issuer;
     });
 
     if (!foundProof || !foundProof.domain) {
       return emptyResponse;
     }
-    const domain = foundProof.domain;
+    const { domain } = foundProof;
     const { error, data } = tryDecodeDomain(domain);
     if (error) {
       return emptyResponse;
@@ -33,18 +33,18 @@ export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
       publicDirectoryContractAddress,
     } = data;
     if (
-      chainOfTrustContractAddress === ethers.constants.AddressZero ||
-      publicDirectoryContractAddress === ethers.constants.AddressZero
+      chainOfTrustContractAddress === ethers.constants.AddressZero
+      || publicDirectoryContractAddress === ethers.constants.AddressZero
     ) {
       return emptyResponse;
     }
     const vm = foundProof.verificationMethod; // TODO: catch
-    const did = vm.substring(0, vm.indexOf("#"));
+    const did = vm.substring(0, vm.indexOf('#'));
     const chainOfTrustResponse = await resolveRootOfTrust(
       chainOfTrustContractAddress,
       publicDirectoryContractAddress,
       chainId,
-      did
+      did,
     ); // TODO: improve searching, by caching, in case did repeats
     if (chainOfTrustResponse.error) {
       return emptyResponse;
@@ -57,7 +57,7 @@ export const resolveRootOfTrustByDomain = async (proofs, issuer) => {
       },
     };
   } catch (e) {
-    const message = "There was an error while verifying against chain of trust";
+    const message = 'There was an error while verifying against chain of trust';
     return {
       error: true,
       message,
@@ -79,16 +79,15 @@ export const resolveRootOfTrust = async (
   chainOfTrustContractAddress,
   publicDirectoryContractAddress,
   chainId,
-  id
+  id,
 ) => {
   const cotResponse = await resolveChainOfTrust(
     chainOfTrustContractAddress,
     chainId,
-    id
+    id,
   );
   if (cotResponse.error) {
-    const message =
-      "There was an error resolving the chain of trust: " + cotResponse.message;
+    const message = `There was an error resolving the chain of trust: ${cotResponse.message}`;
     return {
       error: true,
       message,
@@ -102,14 +101,13 @@ export const resolveRootOfTrust = async (
   for (const member of cotPath) {
     const did = member.address;
 
-    const entityNameByPublicDirectoryResponse =
-      await resolveEntityNameFromPublicDirectory(
-        publicDirectoryContractAddress,
-        did
-      );
+    const entityNameByPublicDirectoryResponse = await resolveEntityNameFromPublicDirectory(
+      publicDirectoryContractAddress,
+      did,
+    );
     if (entityNameByPublicDirectoryResponse.error) {
       console.log(
-        "getRootOfTrust: " + entityNameByPublicDirectoryResponse.message
+        `getRootOfTrust: ${entityNameByPublicDirectoryResponse.message}`,
       );
       return {
         error: true,
@@ -117,7 +115,7 @@ export const resolveRootOfTrust = async (
         data: {},
       };
     }
-    let name = entityNameByPublicDirectoryResponse.data.name;
+    const { name } = entityNameByPublicDirectoryResponse.data;
     rot.push({ ...member, name });
   }
 

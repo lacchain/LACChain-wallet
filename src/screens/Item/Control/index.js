@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import styles from "./Control.module.sass";
-import CredentialVerfication from "./CredentialVerfication";
-import Connect from "../../../components/Connect";
-import Bid from "../../../components/Bid";
-import Accept from "./Accept";
-import PutSale from "./PutSale";
-import SuccessfullyPurchased from "./SuccessfullyPurchased";
-import Modal from "../../../components/Modal";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import styles from './Control.module.sass';
+import CredentialVerfication from './CredentialVerfication';
+import Connect from '../../../components/Connect';
+import Bid from '../../../components/Bid';
+import Accept from './Accept';
+import PutSale from './PutSale';
+import SuccessfullyPurchased from './SuccessfullyPurchased';
+import Modal from '../../../components/Modal';
 
-const Control = ({ className }) => {
+function Control({ className }) {
   const [visibleModalPurchase, setVisibleModalPurchase] = useState(false);
   const [visibleModalBid, setVisibleModalBid] = useState(false);
   const [visibleModalAccept, setVisibleModalAccept] = useState(false);
@@ -24,7 +24,9 @@ const Control = ({ className }) => {
           </div>
           <div className={styles.details}>
             <div className={styles.info}>
-              Highest bid by <span>Kohaku Tora</span>
+              Highest bid by
+              {' '}
+              <span>Kohaku Tora</span>
             </div>
             <div className={styles.cost}>
               <div className={styles.price}>1.46 ETH</div>
@@ -34,36 +36,41 @@ const Control = ({ className }) => {
         </div>
         <div className={styles.btns}>
           <button
-            className={cn("button", styles.button)}
+            className={cn('button', styles.button)}
             onClick={() => setVisibleModalPurchase(true)}
           >
             Purchase now
           </button>
           <button
-            className={cn("button-stroke", styles.button)}
+            className={cn('button-stroke', styles.button)}
             onClick={() => setVisibleModalBid(true)}
           >
             Place a bid
           </button>
         </div>
         <div className={styles.btns}>
-          <button className={cn("button-stroke", styles.button)}>
+          <button className={cn('button-stroke', styles.button)}>
             View all
           </button>
           <button
-            className={cn("button", styles.button)}
+            className={cn('button', styles.button)}
             onClick={() => setVisibleModalAccept(true)}
           >
             Accept
           </button>
         </div>
         <div className={styles.text}>
-          Service fee <span className={styles.percent}>1.5%</span>{" "}
-          <span>2.563 ETH</span> <span>$4,540.62</span>
+          Service fee
+          {' '}
+          <span className={styles.percent}>1.5%</span>
+          {' '}
+          <span>2.563 ETH</span>
+          {' '}
+          <span>$4,540.62</span>
         </div>
         <div className={styles.foot}>
           <button
-            className={cn("button", styles.button)}
+            className={cn('button', styles.button)}
             onClick={() => setVisibleModalSale(true)}
           >
             Put on sale
@@ -101,6 +108,6 @@ const Control = ({ className }) => {
       </Modal>
     </>
   );
-};
+}
 
 export default Control;

@@ -1,9 +1,9 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./Preview.module.sass";
-import Icon from "../../../components/Icon";
+import React from 'react';
+import cn from 'classnames';
+import styles from './Preview.module.sass';
+import Icon from '../../../components/Icon';
 
-const Preview = ({ className, onClose }) => {
+function Preview({ className, onClose }) {
   return (
     <div className={cn(className, styles.wrap)}>
       <div className={styles.inner}>
@@ -43,7 +43,9 @@ const Preview = ({ className, onClose }) => {
             <div className={styles.foot}>
               <div className={styles.status}>
                 <Icon name="candlesticks-up" size="20" />
-                Highest bid <span>0.001 ETH</span>
+                Highest bid
+                {' '}
+                <span>0.001 ETH</span>
               </div>
               <div className={styles.bid}>
                 New bid
@@ -61,6 +63,6 @@ const Preview = ({ className, onClose }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Preview;

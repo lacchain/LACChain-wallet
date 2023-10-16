@@ -1,6 +1,7 @@
-import { GasModelProvider } from "@lacchain/gas-model-provider";
-import { ethers } from "ethers";
-import { LEGACY_PROVIDER_PRC_URL, RPC_URL, SUPPORTED_CHAIN_ID } from "./env";
+import { GasModelProvider } from '@lacchain/gas-model-provider';
+import { ethers } from 'ethers';
+import { LEGACY_PROVIDER_PRC_URL, RPC_URL, SUPPORTED_CHAIN_ID } from './env';
+
 export const gasModelProvider = (chainId = SUPPORTED_CHAIN_ID) => {
   const isSupportedChain = verifyChainId(chainId);
   if (isSupportedChain.error) {
@@ -26,23 +27,23 @@ export const gasModelProvider = (chainId = SUPPORTED_CHAIN_ID) => {
   };
 }; // TODO: move to env
 export const legacyProvider = new ethers.providers.JsonRpcProvider(
-  LEGACY_PROVIDER_PRC_URL
+  LEGACY_PROVIDER_PRC_URL,
 );
 
 export const verifyChainId = (chainId) => {
-  const message = "Unsupported chain";
+  const message = 'Unsupported chain';
   try {
     if (
-      chainId &&
-      chainId.toLowerCase().replace("0x", "") ===
-        SUPPORTED_CHAIN_ID.toLowerCase().replace("0x", "")
+      chainId
+      && chainId.toLowerCase().replace('0x', '')
+        === SUPPORTED_CHAIN_ID.toLowerCase().replace('0x', '')
     ) {
       return {
         error: false,
         message: null,
         data: {
           isSupported: true,
-          message: "",
+          message: '',
         },
       };
     }
@@ -57,8 +58,10 @@ export const verifyChainId = (chainId) => {
   } catch (e) {
     return {
       error: true,
-      message: "There was a error while trying to validate chainId",
+      message: 'There was a error while trying to validate chainId',
       data: {},
     };
   }
 };
+
+export const LAC1_CHAIN_ID = parseInt(SUPPORTED_CHAIN_ID.replace('0x', ''), 16);

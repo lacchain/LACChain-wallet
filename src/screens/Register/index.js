@@ -1,64 +1,66 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import * as uuid from "uuidv4";
-import moment from "moment";
-import styles from "./Register.module.sass";
-import Control from "../../components/Control";
-import TextInput from "../../components/TextInput";
-import Icon from "../../components/Icon";
-import { generateKeyPair } from "../../utils/did";
-import { DID, Lac1DID } from "@lacchain/did";
-import { createKeyPair } from "@lacchain/did/lib/utils";
-import { sendVC } from "../../utils/mailbox";
-import { registerCredentialMock } from "../../utils/credentials";
-import { useAuthContext } from "../../contexts/authContext";
-import { Link, Redirect } from "react-router-dom";
-import LoaderCircle from "../../components/LoaderCircle";
-import Modal from "../../components/Modal";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import * as uuid from 'uuidv4';
+import moment from 'moment';
+import { DID, Lac1DID } from '@lacchain/did';
+import { createKeyPair } from '@lacchain/did/lib/utils';
+import { Link, Redirect } from 'react-router-dom';
+import styles from './Register.module.sass';
+import Control from '../../components/Control';
+import TextInput from '../../components/TextInput';
+import Icon from '../../components/Icon';
+import { generateKeyPair } from '../../utils/did';
+import { sendVC } from '../../utils/mailbox';
+import { registerCredentialMock } from '../../utils/credentials';
+import { useAuthContext } from '../../contexts/authContext';
+import LoaderCircle from '../../components/LoaderCircle';
+import Modal from '../../components/Modal';
 import {
-  LAC1_CHAIN_ID,
+  DID_METHOD,
   LAC1_DID_REGISTRY,
   LAC_DID_NETWORK_IDENTIFIER,
   LAC_DID_REGISTTRY,
   NODE_ADDRESS,
   RPC_URL,
-} from "../../constants/env";
+} from '../../constants/env';
+import { LAC1_CHAIN_ID } from '../../constants/blockchain';
 
 const breadcrumbs = [
   {
-    title: "Import",
-    url: "/import",
+    title: 'Import',
+    url: '/import',
   },
   {
-    title: "Register",
+    title: 'Register',
   },
 ];
 
-const Register = ({ history }) => {
-  const [firstName, setFirstName] = useState("");
-  const [familyName, setFamilyName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [repassword, setRepassword] = useState("");
-  const [error, setError] = useState("");
+function Register({ history }) {
+  const [firstName, setFirstName] = useState('');
+  const [familyName, setFamilyName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [repassword, setRepassword] = useState('');
+  const [error, setError] = useState('');
   const [step, setStep] = useState(0);
   const [sending, setSending] = useState(false);
 
-  const { provider, authorizing, user: currentUser, signin } = useAuthContext();
+  const {
+    provider, authorizing, user: currentUser, signin,
+  } = useAuthContext();
   if (!authorizing && currentUser) return <Redirect to="/" replace />;
 
   const handleSubmit = async () => {
     if (!provider) {
-      if (!password) return setError("Password is empty");
-      if (password !== repassword)
-        return setError("Both password must be equal");
+      if (!password) return setError('Password is empty');
+      if (password !== repassword) return setError('Both password must be equal');
     }
     setSending(true);
     const encryptionKeyPair = await generateKeyPair();
     const controllerKeyPair = createKeyPair();
     let did;
-    if (process.env.REACT_APP_DID_METHOD === "lac1") {
+    if (DID_METHOD === 'lac1') {
       did = await Lac1DID.new({
         registry: LAC1_DID_REGISTRY,
         rpcUrl: RPC_URL,
@@ -79,14 +81,14 @@ const Register = ({ history }) => {
     await did.addController(controllerKeyPair.address);
     setStep(1);
     await did.addKeyAgreement({
-      algorithm: "x25519ka",
-      encoding: "hex",
+      algorithm: 'x25519ka',
+      encoding: 'hex',
       publicKey: `0x${encryptionKeyPair.publicKey}`,
       controller: did.address,
     });
     await did.addAuthenticationMethod({
-      algorithm: "esecp256k1vk",
-      encoding: "blockchain",
+      algorithm: 'esecp256k1vk',
+      encoding: 'blockchain',
       publicKey: did.address,
       controller: did.address,
     });
@@ -103,22 +105,22 @@ const Register = ({ history }) => {
     // TODO: create on fly issuer
     setStep(3);
     const vc = {
-      "@context": [
-        "https://www.w3.org/ns/credentials/v2",
-        "https://credentials-library.lacchain.net/credentials/identity/v2",
+      '@context': [
+        'https://www.w3.org/ns/credentials/v2',
+        'https://credentials-library.lacchain.net/credentials/identity/v2',
       ],
       id: uuid.uuid(),
-      type: ["VerifiableCredential", "IdentityCard"],
+      type: ['VerifiableCredential', 'IdentityCard'],
       validFrom: moment().toISOString(),
-      validUntil: moment().add(2, "years").toISOString(),
+      validUntil: moment().add(2, 'years').toISOString(),
       credentialSubject: {
         id: did.id,
         givenName: firstName,
-        familyName: familyName,
-        email: email,
+        familyName,
+        email,
       },
     };
-    const identityVC = await registerCredentialMock(vc, "type-2");
+    const identityVC = await registerCredentialMock(vc, 'type-2');
     setStep(4);
     await sendVC(user, user.did, identityVC.vc);
     user.credentials = [identityVC.vc];
@@ -126,16 +128,16 @@ const Register = ({ history }) => {
     if (provider) await signin(user);
     else await signin(user, email, password);
     setSending(false);
-    history.push("/");
+    history.push('/');
   };
 
   return (
     <div className={styles.page}>
       <Control className={styles.control} item={breadcrumbs} />
-      <div className={cn("section-pb", styles.section)}>
-        <div className={cn("container", styles.container)}>
+      <div className={cn('section-pb', styles.section)}>
+        <div className={cn('container', styles.container)}>
           {sending && (
-            <Modal visible={true} closable={false}>
+            <Modal visible closable={false}>
               <div className={styles.line}>
                 <div className={styles.icon}>
                   <LoaderCircle className={styles.loader} />
@@ -146,35 +148,47 @@ const Register = ({ history }) => {
                     <ul>
                       {step >= 0 && (
                         <li>
-                          <Icon name="check" size="16" /> Generating a new DID
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Generating a new DID
                         </li>
                       )}
                       {step >= 1 && (
                         <li>
-                          <Icon name="check" size="16" /> Registering Public
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Registering Public
                           Keys
                         </li>
                       )}
                       {step >= 2 && (
                         <li>
-                          <Icon name="check" size="16" /> Changing Controller
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Changing Controller
                         </li>
                       )}
                       {step >= 3 && (
                         <li>
-                          <Icon name="check" size="16" /> Signing LACChain ID
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Signing LACChain ID
                           Credential
                         </li>
                       )}
                       {step >= 4 && (
                         <li>
-                          <Icon name="check" size="16" /> Sending LACChain ID
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Sending LACChain ID
                           Credential
                         </li>
                       )}
                       {step >= 5 && (
                         <li>
-                          <Icon name="check" size="16" /> Encrypting Data
+                          <Icon name="check" size="16" />
+                          {' '}
+                          Encrypting Data
                         </li>
                       )}
                     </ul>
@@ -184,13 +198,15 @@ const Register = ({ history }) => {
             </Modal>
           )}
           <div className={styles.top}>
-            <h3 className={cn("h4", styles.title)}>Create new account</h3>
+            <h3 className={cn('h4', styles.title)}>Create new account</h3>
             <div className={styles.info}>
               You need to provide your name and email to create an account. If
-              you already have a backup copy of your wallet, then you can{" "}
+              you already have a backup copy of your wallet, then you can
+              {' '}
               <Link to="/import">
                 <strong>import</strong>
-              </Link>{" "}
+              </Link>
+              {' '}
               instead.
               {error && <div className={styles.error}>{error}</div>}
             </div>
@@ -275,12 +291,16 @@ const Register = ({ history }) => {
               </div>
               <div className={styles.note}>
                 To create your account you should encrypt the data through your
-                wallet (Metamask). Click <strong>Create account</strong> to
+                wallet (Metamask). Click
+                {' '}
+                <strong>Create account</strong>
+                {' '}
+                to
                 encrypt the account data in the local storage.
               </div>
               <div className={styles.btns}>
                 <button
-                  className={cn("button", styles.button)}
+                  className={cn('button', styles.button)}
                   onClick={handleSubmit}
                 >
                   Create account
@@ -296,6 +316,6 @@ const Register = ({ history }) => {
       </div>
     </div>
   );
-};
+}
 
 export default Register;

@@ -1,42 +1,42 @@
-import canonicalize from "canonicalize";
-import crypto from "crypto";
+import canonicalize from 'canonicalize';
+import crypto from 'crypto';
 import {
   DEFAULT_CHAIN_OF_TRUST_CONTRACT_ADDRESS,
-  DEFAULT_PUBLIC_DIRECTORY_CONTRACT_ADDRESS,
+  DEFAULT_PUBLIC_DIRECTORY_TRUSTED_CONTRACT_ADDRESS,
   DEFAULT_VERIFICATION_REGISTRY_CONTRACT_ADDRESS,
   DOMAIN_TYPE,
   DOMAIN_VERSION,
   SUPPORTED_CHAIN_ID,
-} from "../../constants/env";
-import { checksum } from "../domainType0001";
+} from '../../constants/env';
+import { checksum } from '../domainType0001';
 
-const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-const base58 = require("base-x")(BASE58);
+const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const base58 = require('base-x')(BASE58);
 
-const hex = require("base-x")("0123456789abcdef");
+const hex = require('base-x')('0123456789abcdef');
 
 export const registerType2Credential = async (
   unsecuredDocument,
   proofConfig,
-  jwkSigningKey
+  jwkSigningKey,
 ) => {
   const hashData = computeEcdsaJcs2019CredentialHash(
     unsecuredDocument,
-    proofConfig
+    proofConfig,
   );
 
-  const subtle = window.crypto.subtle;
+  const { subtle } = window.crypto;
   const importedKey = await subtle.importKey(
-    "jwk",
+    'jwk',
     jwkSigningKey,
-    { name: "ECDSA", namedCurve: "P-256" },
+    { name: 'ECDSA', namedCurve: 'P-256' },
     true,
-    ["sign"]
+    ['sign'],
   );
   const result = await subtle.sign(
-    { name: "ECDSA", namedCurve: "P-256", hash: { name: "SHA-256" } },
+    { name: 'ECDSA', namedCurve: 'P-256', hash: { name: 'SHA-256' } },
     importedKey,
-    Buffer.from(hashData.hash.replace("0x", ""), "hex")
+    Buffer.from(hashData.hash.replace('0x', ''), 'hex'),
   );
   const proof = {
     ...proofConfig,
@@ -56,24 +56,26 @@ export const registerType2Credential = async (
 
 export const computeEcdsaJcs2019CredentialHash = (
   unsecuredDocument,
-  proofConfig
+  proofConfig,
 ) => {
   const canonicalDocumentHash = computeRfc8785AndSha256(
-    unsecuredDocument
-  ).replace("0x", "");
+    unsecuredDocument,
+  ).replace('0x', '');
   const proofConfigHash = computeRfc8785AndSha256(proofConfig).replace(
-    "0x",
-    ""
+    '0x',
+    '',
   );
   const credentialHash = proofConfigHash.concat(canonicalDocumentHash);
-  const digest =
-    "0x" + crypto.createHash("sha256").update(credentialHash).digest("hex");
+  const digest = `0x${crypto
+    .createHash('sha256')
+    .update(credentialHash)
+    .digest('hex')}`;
   return { hash: credentialHash, digest };
 };
 
 export const computeRfc8785AndSha256 = (data) => {
   const canonizedData = canonicalize(data);
-  const message = "Error canonicalizing data";
+  const message = 'Error canonicalizing data';
   if (!canonizedData) {
     return {
       error: true,
@@ -81,7 +83,7 @@ export const computeRfc8785AndSha256 = (data) => {
       data: {},
     };
   }
-  return "0x" + crypto.createHash("sha256").update(canonizedData).digest("hex");
+  return `0x${crypto.createHash('sha256').update(canonizedData).digest('hex')}`;
 };
 
 export const getUtcDate = (t = new Date()) => {
@@ -96,24 +98,22 @@ export const getUtcDate = (t = new Date()) => {
 
 export const getTwoDigitFormat = (el) => {
   if (el < 10) {
-    return "0".concat(el.toString());
+    return '0'.concat(el.toString());
   }
   return el.toString();
 };
 
 export const encodeDomain = () => {
-  const publicDirectoryContractAddress =
-    DEFAULT_PUBLIC_DIRECTORY_CONTRACT_ADDRESS;
+  const publicDirectoryContractAddress = DEFAULT_PUBLIC_DIRECTORY_TRUSTED_CONTRACT_ADDRESS;
   const chainOfTrustContractAddress = DEFAULT_CHAIN_OF_TRUST_CONTRACT_ADDRESS;
-  const verificationRegistryContractAddress =
-    DEFAULT_VERIFICATION_REGISTRY_CONTRACT_ADDRESS;
-  const chainIdBuffer = hex.decode(SUPPORTED_CHAIN_ID.replace("0x", ""), "hex");
+  const verificationRegistryContractAddress = DEFAULT_VERIFICATION_REGISTRY_CONTRACT_ADDRESS;
+  const chainIdBuffer = hex.decode(SUPPORTED_CHAIN_ID.replace('0x', ''), 'hex');
   const payload = [
-    Buffer.from(DOMAIN_VERSION.replace("0x", ""), "hex"),
-    Buffer.from(DOMAIN_TYPE.replace("0x", ""), "hex"),
-    Buffer.from(verificationRegistryContractAddress.replace("0x", ""), "hex"),
-    Buffer.from(publicDirectoryContractAddress.replace("0x", ""), "hex"),
-    Buffer.from(chainOfTrustContractAddress.replace("0x", ""), "hex"),
+    Buffer.from(DOMAIN_VERSION.replace('0x', ''), 'hex'),
+    Buffer.from(DOMAIN_TYPE.replace('0x', ''), 'hex'),
+    Buffer.from(verificationRegistryContractAddress.replace('0x', ''), 'hex'),
+    Buffer.from(publicDirectoryContractAddress.replace('0x', ''), 'hex'),
+    Buffer.from(chainOfTrustContractAddress.replace('0x', ''), 'hex'),
     chainIdBuffer,
   ];
   const calculatedChecksum = checksum(Buffer.concat(payload));

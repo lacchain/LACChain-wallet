@@ -1,94 +1,94 @@
-import React, { useState } from "react";
-import cn from "classnames";
-import styles from "./Activity.module.sass";
-import Control from "../../components/Control";
-import Loader from "../../components/Loader";
-import Icon from "../../components/Icon";
-import Filters from "./Filters";
+import React, { useState } from 'react';
+import cn from 'classnames';
+import styles from './Activity.module.sass';
+import Control from '../../components/Control';
+import Loader from '../../components/Loader';
+import Icon from '../../components/Icon';
+import Filters from './Filters';
 
 const breadcrumbs = [
   {
-    title: "Profile",
-    url: "/",
+    title: 'Profile',
+    url: '/',
   },
   {
-    title: "Activity",
+    title: 'Activity',
   },
 ];
 
 const items = [
   {
-    title: "Something went wrong",
+    title: 'Something went wrong',
     description: "Can't display activity card. Try again later",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-1.jpg",
-    icon: "/images/content/flag.svg",
-    color: "#EF466F",
+    date: '2 days ago',
+    image: '/images/content/activity-pic-1.jpg',
+    icon: '/images/content/flag.svg',
+    color: '#EF466F',
   },
   {
-    title: "UI8",
-    description: "started following you",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-2.jpg",
-    icon: "/images/content/play.svg",
-    color: "#141416",
+    title: 'UI8',
+    description: 'started following you',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-2.jpg',
+    icon: '/images/content/play.svg',
+    color: '#141416',
   },
   {
-    title: "ETH received",
-    description: "0.08 ETH recived",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-3.jpg",
-    icon: "/images/content/download.svg",
-    color: "#141416",
+    title: 'ETH received',
+    description: '0.08 ETH recived',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-3.jpg',
+    icon: '/images/content/download.svg',
+    color: '#141416',
   },
   {
-    title: "C O I N Z",
-    description: "purchased by You for 0.001 ETH from UI8",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-4.jpg",
-    icon: "/images/content/megaphone.svg",
-    color: "#141416",
+    title: 'C O I N Z',
+    description: 'purchased by You for 0.001 ETH from UI8',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-4.jpg',
+    icon: '/images/content/megaphone.svg',
+    color: '#141416',
   },
   {
-    title: "ETH received",
-    description: "0.08 ETH recived",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-5.jpg",
-    icon: "/images/content/wallet.svg",
-    color: "#141416",
+    title: 'ETH received',
+    description: '0.08 ETH recived',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-5.jpg',
+    icon: '/images/content/wallet.svg',
+    color: '#141416',
   },
   {
-    title: "ETH received",
-    description: "0.08 ETH recived",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-6.jpg",
-    icon: "/images/content/wallet.svg",
-    color: "#141416",
+    title: 'ETH received',
+    description: '0.08 ETH recived',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-6.jpg',
+    icon: '/images/content/wallet.svg',
+    color: '#141416',
   },
   {
-    title: "ETH received",
-    description: "0.08 ETH recived",
-    date: "2 days ago",
-    image: "/images/content/activity-pic-7.jpg",
-    icon: "/images/content/wallet.svg",
-    color: "#141416",
+    title: 'ETH received',
+    description: '0.08 ETH recived',
+    date: '2 days ago',
+    image: '/images/content/activity-pic-7.jpg',
+    icon: '/images/content/wallet.svg',
+    color: '#141416',
   },
 ];
 
 const filters = [
-  "Sales",
-  "Listings",
-  "Bids",
-  "Burns",
-  "Followings",
-  "Likes",
-  "Purchase",
-  "Transfers",
+  'Sales',
+  'Listings',
+  'Bids',
+  'Burns',
+  'Followings',
+  'Likes',
+  'Purchase',
+  'Transfers',
 ];
 
-const navLinks = ["My activity", "Following", "All activity"];
+const navLinks = ['My activity', 'Following', 'All activity'];
 
-const Activity = () => {
+function Activity() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [visible, setVisible] = useState(0);
@@ -96,23 +96,23 @@ const Activity = () => {
   return (
     <div className={styles.page}>
       <Control className={styles.control} item={breadcrumbs} />
-      <div className={cn("section-pt80", styles.body)}>
-        <div className={cn("container", styles.container)}>
+      <div className={cn('section-pt80', styles.body)}>
+        <div className={cn('container', styles.container)}>
           <div className={styles.top}>
-            <h1 className={cn("h2", styles.title)}>Activity</h1>
+            <h1 className={cn('h2', styles.title)}>Activity</h1>
             <button
               className={cn(
-                "button-stroke button-small mobile-hide",
-                styles.button
+                'button-stroke button-small mobile-hide',
+                styles.button,
               )}
             >
               Mark all as read
             </button>
             <button
               className={cn(
-                "button-circle-stroke button-small tablet-show",
+                'button-circle-stroke button-small tablet-show',
                 styles.toggle,
-                { [styles.active]: visible }
+                { [styles.active]: visible },
               )}
               onClick={() => setVisible(!visible)}
             >
@@ -159,8 +159,8 @@ const Activity = () => {
             </div>
             <button
               className={cn(
-                "button-stroke button-small mobile-show",
-                styles.button
+                'button-stroke button-small mobile-show',
+                styles.button,
               )}
             >
               Mark all as read
@@ -176,6 +176,6 @@ const Activity = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Activity;

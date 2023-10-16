@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import OutsideClickHandler from "react-outside-click-handler";
-import cn from "classnames";
-import styles from "./Modal.module.sass";
-import Icon from "../Icon";
+import React, { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import OutsideClickHandler from 'react-outside-click-handler';
+import cn from 'classnames';
+import styles from './Modal.module.sass';
+import Icon from '../Icon';
 
 const Modal = ({
-    closable = true,
+  closable = true,
   outerClassName,
   containerClassName,
   visible,
@@ -19,21 +19,21 @@ const Modal = ({
         onClose();
       }
     },
-    [onClose]
+    [onClose],
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", escFunction, false);
+    document.addEventListener('keydown', escFunction, false);
     return () => {
-      document.removeEventListener("keydown", escFunction, false);
+      document.removeEventListener('keydown', escFunction, false);
     };
   }, [escFunction]);
 
   const scrollRef = useRef(null);
 
-  /*useEffect(() => {
+  /* useEffect(() => {
     visible ? disableBodyScroll(scrollRef) : enableBodyScroll(scrollRef);
-  }, [visible]);*/
+  }, [visible]); */
 
   return createPortal(
     visible && (
@@ -42,17 +42,18 @@ const Modal = ({
           <OutsideClickHandler onOutsideClick={onClose}>
             <div className={cn(styles.container, containerClassName)}>
               {children}
-              {closable &&
+              {closable
+              && (
               <button className={styles.close} onClick={onClose}>
-                <Icon name="close" size="14"/>
+                <Icon name="close" size="14" />
               </button>
-              }
+              )}
             </div>
           </OutsideClickHandler>
         </div>
       </div>
     ),
-    document.body
+    document.body,
   );
 };
 
