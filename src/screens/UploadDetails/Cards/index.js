@@ -1,8 +1,8 @@
-import React from "react";
-import styles from "./Cards.module.sass";
-import Icon from "../../../components/Icon";
+import React from 'react';
+import styles from './Cards.module.sass';
+import Icon from '../../../components/Icon';
 
-const Cards = ({ className, items }) => {
+function Cards({ className, items }) {
   return (
     <div className={(className, styles.cards)}>
       {items.map((x, index) => (
@@ -15,6 +15,6 @@ const Cards = ({ className, items }) => {
       ))}
     </div>
   );
-};
+}
 
 export default Cards;

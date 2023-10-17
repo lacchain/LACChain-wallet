@@ -1,10 +1,10 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./Items.module.sass";
-import Card from "../../../components/Card";
-import Loader from "../../../components/Loader";
+import React from 'react';
+import cn from 'classnames';
+import styles from './Items.module.sass';
+import Card from '../../../components/Card';
+import Loader from '../../../components/Loader';
 
-const Items = ({ className, items }) => {
+function Items({ className, items }) {
   return (
     <div className={cn(styles.items, className)}>
       <div className={styles.list}>
@@ -15,6 +15,6 @@ const Items = ({ className, items }) => {
       <Loader className={styles.loader} />
     </div>
   );
-};
+}
 
 export default Items;

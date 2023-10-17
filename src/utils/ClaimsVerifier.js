@@ -1,444 +1,457 @@
 export default {
   abi: [
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "address",
-          "name": "_registryAddress",
-          "type": "address"
-        }
+          internalType: 'address',
+          name: '_registryAddress',
+          type: 'address',
+        },
       ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
+      stateMutability: 'nonpayable',
+      type: 'constructor',
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          indexed: true,
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
+          indexed: true,
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        }
+          indexed: true,
+          internalType: 'address',
+          name: 'sender',
+          type: 'address',
+        },
       ],
-      "name": "RoleGranted",
-      "type": "event"
+      name: 'RoleGranted',
+      type: 'event',
     },
     {
-      "anonymous": false,
-      "inputs": [
+      anonymous: false,
+      inputs: [
         {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          indexed: true,
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
+          indexed: true,
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        }
+          indexed: true,
+          internalType: 'address',
+          name: 'sender',
+          type: 'address',
+        },
       ],
-      "name": "RoleRevoked",
-      "type": "event"
+      name: 'RoleRevoked',
+      type: 'event',
     },
     {
-      "inputs": [],
-      "name": "DEFAULT_ADMIN_ROLE",
-      "outputs": [
+      inputs: [],
+      name: 'DEFAULT_ADMIN_ROLE',
+      outputs: [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: '',
+          type: 'bytes32',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [],
-      "name": "ISSUER_ROLE",
-      "outputs": [
+      inputs: [],
+      name: 'ISSUER_ROLE',
+      outputs: [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: '',
+          type: 'bytes32',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [],
-      "name": "SIGNER_ROLE",
-      "outputs": [
+      inputs: [],
+      name: 'SIGNER_ROLE',
+      outputs: [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: '',
+          type: 'bytes32',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
+        },
       ],
-      "name": "getRoleAdmin",
-      "outputs": [
+      name: 'getRoleAdmin',
+      outputs: [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: '',
+          type: 'bytes32',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
         },
         {
-          "internalType": "uint256",
-          "name": "index",
-          "type": "uint256"
-        }
+          internalType: 'uint256',
+          name: 'index',
+          type: 'uint256',
+        },
       ],
-      "name": "getRoleMember",
-      "outputs": [
+      name: 'getRoleMember',
+      outputs: [
         {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
+          internalType: 'address',
+          name: '',
+          type: 'address',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
+        },
       ],
-      "name": "getRoleMemberCount",
-      "outputs": [
+      name: 'getRoleMemberCount',
+      outputs: [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
+          internalType: 'uint256',
+          name: '',
+          type: 'uint256',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
         },
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
+        },
       ],
-      "name": "grantRole",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: 'grantRole',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
         },
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
+        },
       ],
-      "name": "hasRole",
-      "outputs": [
+      name: 'hasRole',
+      outputs: [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          internalType: 'address',
+          name: '_subject',
+          type: 'address',
         },
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "renounceRole",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "role",
-          "type": "bytes32"
+          internalType: 'bytes32',
+          name: '_credentialHash',
+          type: 'bytes32',
         },
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
+          internalType: 'uint256',
+          name: '_from',
+          type: 'uint256',
+        },
+        {
+          internalType: 'uint256',
+          name: '_exp',
+          type: 'uint256',
+        },
+        {
+          internalType: 'bytes',
+          name: '_signature',
+          type: 'bytes',
+        },
       ],
-      "name": "revokeRole",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+      name: 'registerCredential',
+      outputs: [
+        {
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
+        },
+      ],
+      stateMutability: 'nonpayable',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "components": [
+          internalType: 'bytes32',
+          name: '_credentialHash',
+          type: 'bytes32',
+        },
+        {
+          internalType: 'address',
+          name: 'issuer',
+          type: 'address',
+        },
+        {
+          internalType: 'bytes',
+          name: '_signature',
+          type: 'bytes',
+        },
+      ],
+      name: 'registerSignature',
+      outputs: [
+        {
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
+        },
+      ],
+      stateMutability: 'nonpayable',
+      type: 'function',
+    },
+    {
+      inputs: [],
+      name: 'registry',
+      outputs: [
+        {
+          internalType: 'contract CredentialRegistry',
+          name: '',
+          type: 'address',
+        },
+      ],
+      stateMutability: 'view',
+      type: 'function',
+    },
+    {
+      inputs: [
+        {
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
+        },
+        {
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
+        },
+      ],
+      name: 'renounceRole',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function',
+    },
+    {
+      inputs: [
+        {
+          internalType: 'bytes32',
+          name: 'role',
+          type: 'bytes32',
+        },
+        {
+          internalType: 'address',
+          name: 'account',
+          type: 'address',
+        },
+      ],
+      name: 'revokeRole',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function',
+    },
+    {
+      inputs: [
+        {
+          components: [
             {
-              "internalType": "address",
-              "name": "issuer",
-              "type": "address"
+              internalType: 'address',
+              name: 'issuer',
+              type: 'address',
             },
             {
-              "internalType": "address",
-              "name": "subject",
-              "type": "address"
+              internalType: 'address',
+              name: 'subject',
+              type: 'address',
             },
             {
-              "internalType": "bytes32",
-              "name": "data",
-              "type": "bytes32"
+              internalType: 'bytes32',
+              name: 'data',
+              type: 'bytes32',
             },
             {
-              "internalType": "uint256",
-              "name": "validFrom",
-              "type": "uint256"
+              internalType: 'uint256',
+              name: 'validFrom',
+              type: 'uint256',
             },
             {
-              "internalType": "uint256",
-              "name": "validTo",
-              "type": "uint256"
-            }
+              internalType: 'uint256',
+              name: 'validTo',
+              type: 'uint256',
+            },
           ],
-          "internalType": "struct ClaimTypes.VerifiableCredential",
-          "name": "vc",
-          "type": "tuple"
+          internalType: 'struct ClaimTypes.VerifiableCredential',
+          name: 'vc',
+          type: 'tuple',
         },
         {
-          "internalType": "uint8",
-          "name": "v",
-          "type": "uint8"
+          internalType: 'uint8',
+          name: 'v',
+          type: 'uint8',
         },
         {
-          "internalType": "bytes32",
-          "name": "r",
-          "type": "bytes32"
+          internalType: 'bytes32',
+          name: 'r',
+          type: 'bytes32',
         },
         {
-          "internalType": "bytes32",
-          "name": "s",
-          "type": "bytes32"
-        }
+          internalType: 'bytes32',
+          name: 's',
+          type: 'bytes32',
+        },
       ],
-      "name": "verifyCredential",
-      "outputs": [
+      name: 'verifyCredential',
+      outputs: [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
         },
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
         },
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
         },
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
         },
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
     {
-      "inputs": [
+      inputs: [
         {
-          "components": [
+          components: [
             {
-              "internalType": "address",
-              "name": "issuer",
-              "type": "address"
+              internalType: 'address',
+              name: 'issuer',
+              type: 'address',
             },
             {
-              "internalType": "address",
-              "name": "subject",
-              "type": "address"
+              internalType: 'address',
+              name: 'subject',
+              type: 'address',
             },
             {
-              "internalType": "bytes32",
-              "name": "data",
-              "type": "bytes32"
+              internalType: 'bytes32',
+              name: 'data',
+              type: 'bytes32',
             },
             {
-              "internalType": "uint256",
-              "name": "validFrom",
-              "type": "uint256"
+              internalType: 'uint256',
+              name: 'validFrom',
+              type: 'uint256',
             },
             {
-              "internalType": "uint256",
-              "name": "validTo",
-              "type": "uint256"
-            }
+              internalType: 'uint256',
+              name: 'validTo',
+              type: 'uint256',
+            },
           ],
-          "internalType": "struct ClaimTypes.VerifiableCredential",
-          "name": "vc",
-          "type": "tuple"
+          internalType: 'struct ClaimTypes.VerifiableCredential',
+          name: 'vc',
+          type: 'tuple',
         },
         {
-          "internalType": "bytes",
-          "name": "_signature",
-          "type": "bytes"
-        }
+          internalType: 'bytes',
+          name: '_signature',
+          type: 'bytes',
+        },
       ],
-      "name": "verifySigner",
-      "outputs": [
+      name: 'verifySigner',
+      outputs: [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
+          internalType: 'bool',
+          name: '',
+          type: 'bool',
+        },
       ],
-      "stateMutability": "view",
-      "type": "function"
+      stateMutability: 'view',
+      type: 'function',
     },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_subject",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_credentialHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_from",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_exp",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_signature",
-          "type": "bytes"
-        }
-      ],
-      "name": "registerCredential",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "_credentialHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "address",
-          "name": "issuer",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes",
-          "name": "_signature",
-          "type": "bytes"
-        }
-      ],
-      "name": "registerSignature",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ]
-}
+  ],
+};

@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
-import { withRouter, useLocation } from "react-router-dom";
-import { clearAllBodyScrollLocks } from "body-scroll-lock";
-import styles from "./Page.module.sass";
-import Header from "../Header";
-import Footer from "../Footer";
+import React, { useEffect } from 'react';
+import { withRouter, useLocation } from 'react-router-dom';
+import { clearAllBodyScrollLocks } from 'body-scroll-lock';
+import styles from './Page.module.sass';
+import Header from '../Header';
+import Footer from '../Footer';
 
-const Page = ({ children }) => {
+function Page({ children }) {
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -20,6 +20,6 @@ const Page = ({ children }) => {
       <Footer />
     </div>
   );
-};
+}
 
 export default withRouter(Page);

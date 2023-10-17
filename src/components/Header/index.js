@@ -1,27 +1,27 @@
-import React, { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
-import cn from "classnames";
-import styles from "./Header.module.sass";
-import Icon from "../Icon";
-import Image from "../Image";
-import Notification from "./Notification";
-import User from "./User";
-import { useAuthContext } from "../../contexts/authContext";
+import React, { useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import cn from 'classnames';
+import styles from './Header.module.sass';
+import Icon from '../Icon';
+import Image from '../Image';
+import Notification from './Notification';
+import User from './User';
+import { useAuthContext } from '../../contexts/authContext';
 
 const nav = [
   {
-    url: "/",
-    title: "Credentials",
+    url: '/',
+    title: 'Credentials',
   },
   {
-    url: "/verification",
-    title: "Verification",
-  }
+    url: '/verification',
+    title: 'Verification',
+  },
 ];
 
-const Headers = () => {
+function Headers() {
   const [visibleNav, setVisibleNav] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const { user } = useAuthContext();
 
@@ -31,7 +31,7 @@ const Headers = () => {
 
   return (
     <header className={styles.header}>
-      <div className={cn("container", styles.container)}>
+      <div className={cn('container', styles.container)}>
         <Link className={styles.logo} to="/">
           <Image
             className={styles.pic}
@@ -46,7 +46,7 @@ const Headers = () => {
               <Link
                 className={styles.link}
                 // activeClassName={styles.active}
-                  onClick={ ()=> setVisibleNav( false ) }
+                onClick={() => setVisibleNav(false)}
                 to={x.url}
                 key={index}
               >
@@ -54,7 +54,7 @@ const Headers = () => {
               </Link>
             ))}
           </nav>
-          {/*<form
+          {/* <form
             className={styles.search}
             action=""
             onSubmit={() => handleSubmit()}
@@ -74,29 +74,28 @@ const Headers = () => {
           </form>
           */}
           <Link
-            className={cn("button-small", styles.button)}
+            className={cn('button-small', styles.button)}
             to="/upload-variants"
           >
             Upload
           </Link>
         </div>
-        {/*<Notification className={styles.notification} />*/}
+        {/* <Notification className={styles.notification} /> */}
         {/* <Link
           className={cn("button-stroke button-small", styles.button)}
           to="/connect-wallet"
         >
           Connect Wallet
         </Link> */}
-        {user &&
-          <User className={styles.user}/>
-        }
+        {user
+          && <User className={styles.user} />}
         <button
           className={cn(styles.burger, { [styles.active]: visibleNav })}
           onClick={() => setVisibleNav(!visibleNav)}
-        ></button>
+        />
       </div>
     </header>
   );
-};
+}
 
 export default Headers;

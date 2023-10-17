@@ -1,9 +1,9 @@
-import React from "react";
-import cn from "classnames";
-import styles from "./Followers.module.sass";
-import Loader from "../../../components/Loader";
+import React from 'react';
+import cn from 'classnames';
+import styles from './Followers.module.sass';
+import Loader from '../../../components/Loader';
 
-const Followers = ({ className, items }) => {
+function Followers({ className, items }) {
   return (
     <div className={cn(styles.followers, className)}>
       <div className={styles.list}>
@@ -18,11 +18,11 @@ const Followers = ({ className, items }) => {
                 <div className={styles.counter}>{x.counter}</div>
                 <a
                   className={cn(
-                    { "button-small": x.buttonClass === "blue" },
+                    { 'button-small': x.buttonClass === 'blue' },
                     {
-                      "button-stroke button-small": x.buttonClass === "stroke",
+                      'button-stroke button-small': x.buttonClass === 'stroke',
                     },
-                    styles.button
+                    styles.button,
                   )}
                   href={x.url}
                   target="_blank"
@@ -47,6 +47,6 @@ const Followers = ({ className, items }) => {
       <Loader className={styles.loader} />
     </div>
   );
-};
+}
 
 export default Followers;
