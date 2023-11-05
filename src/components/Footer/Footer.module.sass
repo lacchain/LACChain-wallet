@@ -89,6 +89,7 @@
 
 .foot
     display: flex
+    flex-direction: column
     justify-content: space-between
     padding: 32px 0
     +caption-2
@@ -98,16 +99,20 @@
 
 .copyright
     color: $neutrals4
-    +m
-        text-align: center
+    text-align: center
 
 .note
-    +m
-        display: none
+    display: none
     a
         margin-left: 16px 
         font-weight: 600
         color: $blue
         transition: color .2s
         &:hover
-            color: darken($blue, 10)   
+            color: darken($blue, 10)
+.footerimage
+    text-align: center
+.footerimage img
+    +m
+        width: 60%
+    width: 20%
