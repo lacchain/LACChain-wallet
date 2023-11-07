@@ -4,7 +4,7 @@ export const formatUser = (user) => {
     const identity = user.credentials.find((vc) => vc.type?.find((type) => type === 'IdentityCard'));
     if (!identity) return 'Unknown User';
     const subject = identity.credentialSubject;
-    return `${subject.givenName} ${subject.familyName} ${subject.lastName}`;
+    return `${subject.givenName} ${subject.familyName} ${subject.lastName ? subject.lastName: ''}`;
   }
 
   return 'Unknown User';
